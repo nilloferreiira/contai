@@ -17,6 +17,8 @@ only — no Google OAuth in MVP).
 - `src/lib/finance/` — pure domain logic, see `src/lib/finance/CLAUDE.md`
 - `src/lib/supabase/` — Supabase clients, see `src/lib/supabase/CLAUDE.md`
 - `src/lib/schemas/` — zod schemas, see `src/lib/schemas/CLAUDE.md`
+- `src/providers/` — root-level client providers (`QueryProvider`)
+- `src/tests/` — vitest unit tests for the domain layer
 - `supabase/migrations/` — SQL migrations
 
 ## Conventions
