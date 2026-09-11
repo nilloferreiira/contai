@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@contai/api": "workspace:*",
     "@contai/db": "workspace:*",
     "@contai/domain": "workspace:*",
     "@hookform/resolvers": "^5.9.1",

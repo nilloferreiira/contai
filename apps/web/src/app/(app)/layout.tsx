@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
-import { auth } from '@/lib/auth'
+import { auth } from '@contai/api'
 import { BottomNav } from '@/components/app/bottom-nav'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
