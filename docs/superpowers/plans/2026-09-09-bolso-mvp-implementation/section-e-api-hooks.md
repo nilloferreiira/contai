@@ -1,5 +1,11 @@
 # Bolso MVP Implementation Plan — Section E: API + hooks
 
+> **Superseded:** rewritten as tRPC procedures in
+> [`section-e-api-trpc.md`](./section-e-api-trpc.md), per
+> `docs/superpowers/specs/2026-09-11-monorepo-trpc-migration-design.md`.
+> Kept below for historical reference — the REST routes described here were
+> never built.
+
 > Part of the full plan. Master checklist and progress tracking: `../2026-09-09-bolso-mvp-implementation.md`. Shared context below is duplicated from that file so this section can be worked on standalone.
 
 **Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js, PostgreSQL, Drizzle ORM, and Better Auth.
