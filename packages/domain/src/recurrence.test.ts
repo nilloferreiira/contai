@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateRecurrenceOccurrences } from '@/lib/finance/recurrence'
+import { generateRecurrenceOccurrences } from './recurrence'
 
 describe('generateRecurrenceOccurrences', () => {
     it('includes the start date itself', () => {

@@ -1,7 +1,9 @@
-# src/lib/finance
+# packages/domain (`@contai/domain`)
 
-Pure domain logic — no database or ORM import allowed here. Every function is a
-plain input→output transformation, unit-tested in `src/tests/`.
+Pure business logic — no database, tRPC, or Next.js dependency. Every
+function is a plain input→output transformation, unit-tested colocated
+as `*.test.ts`. Importable by `packages/api` (server) and, later, an RN
+app directly.
 
 - `date.ts` / `money.ts` — primitives used by everything else.
 - `invoice.ts` — closing/due-day math for a card cycle.
@@ -12,3 +14,6 @@ plain input→output transformation, unit-tested in `src/tests/`.
 - `merchants.ts` — normalizes merchant names for dedup matching.
 - `parser.ts` — deterministic natural-language expense parser.
 - `dashboard.ts` — read-side aggregations over occurrences.
+- `schemas/` — zod schemas shared between forms (`apps/web`) and future
+  API validation (`packages/api`) — `auth-schema.ts` (sign-in/sign-up,
+  password requirements).

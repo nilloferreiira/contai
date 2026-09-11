@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { generateInstallments } from '@/lib/finance/installments'
-import type { CardCycle } from '@/lib/finance/invoice'
+import { generateInstallments } from './installments'
+import type { CardCycle } from './invoice'
 
 const card: CardCycle = { closing_day: 10, due_day: 20 }
 
