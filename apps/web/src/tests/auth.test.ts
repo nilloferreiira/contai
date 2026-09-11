@@ -55,8 +55,7 @@ describe('Auth schemas & client', () => {
     })
 
     it('connects to database and queries user table', async () => {
-        const { db } = await import('@/db')
-        const { user } = await import('@/db/schema')
+        const { db, user } = await import('@contai/db')
         const users = await db.select().from(user)
         expect(Array.isArray(users)).toBe(true)
     })
