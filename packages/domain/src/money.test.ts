@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatBRL } from '@/lib/finance/money'
+import { formatBRL } from './money'
 
 describe('formatBRL', () => {
     it('formats with the BRL symbol and comma decimal', () => {

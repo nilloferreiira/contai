@@ -8,8 +8,8 @@ and never imported by app code.
 - `seed-data/` — typed fixture data (e.g. `finance-profile.ts`) consumed
   by the scripts.
 
-Scripts reuse the same `src/lib/finance/` domain functions and
-`src/db/schema` the app uses, rather than hand-duplicating logic. Every
-insert is scoped to the CLI-supplied `targetUserId` (multi-tenant
-isolation, same as the app's API routes) and must respect the same
-idempotency guards the app's routes rely on.
+Scripts reuse the same `@contai/domain` functions and `@contai/db` schema
+the app uses, rather than hand-duplicating logic. Every insert is scoped
+to the CLI-supplied `targetUserId` (multi-tenant isolation, same as the
+app's API layer) and must respect the same idempotency guards the app
+relies on.

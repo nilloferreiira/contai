@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import { Check, X } from 'lucide-react'
 import { twMerge } from 'tailwind-merge'
-import { passwordRequirements } from '@/lib/schemas/auth-schema'
+import { passwordRequirements } from '@contai/domain'
 
 export interface PasswordChecklistProps extends ComponentProps<'ul'> {
     password: string

@@ -11,7 +11,10 @@
     "db:push": "pnpm --filter @contai/db exec drizzle-kit push --force",
     "db:seed": "tsx scripts/seed.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@contai/db": "workspace:*",
+    "@contai/domain": "workspace:*"
+  },
   "devDependencies": {
     "turbo": "^2",
     "tsx": "^4.23.13"

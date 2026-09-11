@@ -1,11 +1,7 @@
 // scripts/seed.ts
 import { eq } from 'drizzle-orm'
-import { db } from '@/db'
-import { cards, categories, expenseInstallments, expenses, installmentPlans, merchants, recurrences, user } from '@/db/schema'
-import { toISODate } from '@/lib/finance/date'
-import { generateInstallments } from '@/lib/finance/installments'
-import { getInvoiceForExpense, type CardCycle } from '@/lib/finance/invoice'
-import { generateRecurrenceOccurrences } from '@/lib/finance/recurrence'
+import { db, cards, categories, expenseInstallments, expenses, installmentPlans, merchants, recurrences, user } from '@contai/db'
+import { toISODate, generateInstallments, getInvoiceForExpense, generateRecurrenceOccurrences, type CardCycle } from '@contai/domain'
 import { seedCards, seedCategories, seedExpenses, seedMerchants, seedRecurrences } from './seed-data/finance-profile'
 
 function addMonths(date: Date, months: number): Date {
