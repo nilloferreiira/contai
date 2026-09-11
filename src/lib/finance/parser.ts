@@ -1,5 +1,5 @@
 export function parseAmount(input: string): { value: number; remainder: string } | null {
-    const match = input.match(/(?:R\$?\s*)?(\d{1,3}(?:\.\d{3})*(?:,\d{2})?|\d+(?:,\d{2})?)/i)
+    const match = input.match(/(?:R\$?\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{2})?|\d+(?:,\d{2})?)/i)
     if (!match) return null
 
     const raw = match[1]
@@ -66,4 +66,116 @@ export function parseExplicitDate(input: string, today: Date): { date: Date; rem
     }
 
     return null
+}
+
+import { normalizeMerchantName } from './merchants'
+
+export interface ParserCard {
+    id: string
+    name: string
+}
+
+export interface ParserCategory {
+    id: string
+    name: string
+}
+
+export interface ParserMerchant {
+    id: string
+    normalized_name: string
+    display_name: string
+    default_category_id: string | null
+    default_card_id: string | null
+}
+
+export interface ParserContext {
+    cards: ParserCard[]
+    categories: ParserCategory[]
+    merchants: ParserMerchant[]
+}
+
+export interface ParsedExpense {
+    amount: number | null
+    installments: number | null
+    frequency: 'weekly' | 'monthly' | 'yearly' | null
+    cardId: string | null
+    categoryId: string | null
+    merchantName: string | null
+    purchaseDate: Date
+    ambiguous: boolean
+}
+
+function matchCard(input: string, cards: ParserCard[]): { id: string; remainder: string } | null {
+    for (const card of cards) {
+        const pattern = new RegExp(`\\b${escapeRegExp(card.name)}\\b`, 'i')
+        const match = input.match(pattern)
+        if (match) {
+            return { id: card.id, remainder: (input.slice(0, match.index) + input.slice((match.index ?? 0) + match[0].length)).trim() }
+        }
+    }
+    return null
+}
+
+function matchExplicitCategory(input: string, categories: ParserCategory[]): { id: string; remainder: string } | null {
+    const sorted = [...categories].sort((a, b) => b.name.length - a.name.length)
+    for (const category of sorted) {
+        const pattern = new RegExp(`\\b${escapeRegExp(category.name)}\\b`, 'i')
+        const match = input.match(pattern)
+        if (match) {
+            return { id: category.id, remainder: (input.slice(0, match.index) + input.slice((match.index ?? 0) + match[0].length)).trim() }
+        }
+    }
+    return null
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+const CONNECTOR_WORDS = new Set(['na', 'no', 'em', 'de', 'do', 'da'])
+
+function stripConnectorWords(input: string): string {
+    return input
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0 && !CONNECTOR_WORDS.has(word.toLowerCase()))
+        .join(' ')
+}
+
+export function parseExpenseInput(input: string, context: ParserContext, today: Date): ParsedExpense {
+    let remainder = input
+
+    const amountResult = parseAmount(remainder)
+    if (amountResult) remainder = amountResult.remainder
+
+    const installmentResult = parseInstallmentCount(remainder)
+    if (installmentResult) remainder = installmentResult.remainder
+
+    const recurrenceResult = parseRecurrenceFrequency(remainder)
+    if (recurrenceResult) remainder = recurrenceResult.remainder
+
+    const cardResult = matchCard(remainder, context.cards)
+    if (cardResult) remainder = cardResult.remainder
+
+    const categoryResult = matchExplicitCategory(remainder, context.categories)
+    if (categoryResult) remainder = categoryResult.remainder
+
+    const dateResult = parseExplicitDate(remainder, today)
+    if (dateResult) remainder = dateResult.remainder
+
+    const merchantName = stripConnectorWords(remainder) || null
+    const matchedMerchant = merchantName
+        ? context.merchants.find((m) => m.normalized_name === normalizeMerchantName(merchantName))
+        : undefined
+
+    return {
+        amount: amountResult?.value ?? null,
+        installments: installmentResult?.count ?? null,
+        frequency: recurrenceResult?.frequency ?? null,
+        cardId: cardResult?.id ?? matchedMerchant?.default_card_id ?? null,
+        categoryId: categoryResult?.id ?? matchedMerchant?.default_category_id ?? null,
+        merchantName: merchantName ? normalizeMerchantName(merchantName) : null,
+        purchaseDate: dateResult?.date ?? today,
+        ambiguous: amountResult === null,
+    }
 }

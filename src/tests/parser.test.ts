@@ -71,3 +71,52 @@ describe('parseExplicitDate', () => {
         expect(parseExplicitDate('aluguel 12/09', today)?.date.toDateString()).toBe(new Date(2026, 8, 12).toDateString())
     })
 })
+
+import { parseExpenseInput, type ParserContext } from '@/lib/finance/parser'
+
+const context: ParserContext = {
+    cards: [{ id: 'card-1', name: 'Nubank' }],
+    categories: [
+        { id: 'cat-1', name: 'Alimentação' },
+        { id: 'cat-2', name: 'Alimentação Fora' },
+    ],
+    merchants: [
+        { id: 'merch-1', normalized_name: 'americanas', display_name: 'Americanas', default_category_id: 'cat-1', default_card_id: 'card-1' },
+    ],
+}
+
+describe('parseExpenseInput', () => {
+    const today = new Date(2026, 8, 9)
+
+    it('extracts amount, installments, card, and merchant', () => {
+        const result = parseExpenseInput('1200 em 3x na americanas no nubank', context, today)
+        expect(result.amount).toBe(1200)
+        expect(result.installments).toBe(3)
+        expect(result.cardId).toBe('card-1')
+        expect(result.merchantName).toBe('americanas')
+        expect(result.ambiguous).toBe(false)
+    })
+
+    it('prefers the longest explicit category match over a shorter one', () => {
+        const result = parseExpenseInput('20 alimentação fora', context, today)
+        expect(result.categoryId).toBe('cat-2')
+    })
+
+    it('applies the merchant default category/card when merchant is known', () => {
+        const result = parseExpenseInput('50 americanas', context, today)
+        expect(result.categoryId).toBe('cat-1')
+        expect(result.cardId).toBe('card-1')
+    })
+
+    it('flags ambiguous when there is no amount', () => {
+        const result = parseExpenseInput('almoço no shopping', context, today)
+        expect(result.ambiguous).toBe(true)
+        expect(result.amount).toBeNull()
+    })
+
+    it('carries the recurrence frequency through', () => {
+        const result = parseExpenseInput('netflix 55,90 todo mes', context, today)
+        expect(result.frequency).toBe('monthly')
+        expect(result.merchantName).toBe('netflix')
+    })
+})
