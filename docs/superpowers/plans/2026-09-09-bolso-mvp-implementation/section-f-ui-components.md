@@ -2,11 +2,11 @@
 
 > Part of the full plan. Master checklist and progress tracking: `../2026-09-09-bolso-mvp-implementation.md`. Shared context below is duplicated from that file so this section can be worked on standalone.
 
-**Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js + Supabase.
+**Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js + PostgreSQL + Drizzle ORM + Better Auth (JWT).
 
-**Architecture:** Next.js App Router with Server Components by default; Supabase for Postgres+Auth with per-user RLS; a DB-free pure domain layer (`src/lib/finance/`) handling invoice/installment/recurrence/parser math, unit-tested with vitest; thin API routes (`auth → zod → execute → JSON`) that call the domain layer and Supabase; React Query on the client for cache/mutations; shadcn/ui + tailwind-variants for components.
+**Architecture:** Next.js App Router with Server Components by default; PostgreSQL via Drizzle ORM; Better Auth (JWT plugin with signed stateless cookies) for authentication; a DB-free pure domain layer (`src/lib/finance/`) handling invoice/installment/recurrence/parser math, unit-tested with vitest; thin API routes (`auth → zod → execute → JSON`) that call the domain layer and Drizzle ORM; React Query on the client for cache/mutations; shadcn/ui + tailwind-variants for components.
 
-**Tech Stack:** Next.js 15+ (TS strict), pnpm, shadcn/ui, Supabase (`@supabase/supabase-js`, `@supabase/ssr`), `@tanstack/react-query` v5, zod, react-hook-form, Tailwind v4, tailwind-variants, tailwind-merge, lucide-react, sonner, date-fns, vitest.
+**Tech Stack:** Next.js 16+ (TS strict), pnpm, shadcn/ui, PostgreSQL (`postgres` driver), Drizzle ORM (`drizzle-orm`, `drizzle-kit`), Better Auth (`better-auth` with JWT plugin, `@better-auth/cli`), `@tanstack/react-query` v5, zod, react-hook-form, Tailwind v4, tailwind-variants, tailwind-merge, lucide-react, sonner, date-fns, vitest.
 
 **Spec:** `docs/superpowers/specs/2026-09-09-bolso-mvp-design.md`
 
@@ -14,15 +14,15 @@
 
 - Files: lowercase-with-hyphens (`user-card.tsx`, `use-modal.ts`).
 - Always named exports, never `export default` — except `page.tsx`, `layout.tsx`, and `route.ts` handlers (`GET`/`POST`/`PATCH`/`DELETE`), which Next.js requires.
-- No barrel files (`index.ts`) for internal folders.
+- No barrel files (`index.ts`) for internal folders (except `src/db/schema/index.ts` for Drizzle schema re-exports).
 - Every UI component: `className={twMerge('base-classes', className)}`, `data-slot="<name>"` on the root element, state via `data-disabled={disabled ? '' : undefined}` (not boolean className logic), `{...props}` spread last, icon-only buttons need `aria-label`, icons use explicit `size-*` classes.
 - No hardcoded colors (`text-white`, `bg-[#hex]`) — only the tokens in `globals.css` (`bg-surface`, `text-foreground`, `border-border`, etc.).
 - TypeScript: never `React.FC`, never `any`; type-only imports (`import type { ComponentProps } from 'react'`); component props extend `ComponentProps<'tag'>` (+ `VariantProps<typeof xVariants>` when the component has variants).
-- Every API route under `src/app/api/*`: call `supabase.auth.getUser()` and return `401` if no user, `safeParse` the body with a zod schema and return `422` with `error.flatten()` on failure — never trust a client-supplied `user_id`.
+- Every API route under `src/app/api/*`: call `auth.api.getSession({ headers: await headers() })` and return `401` if no user, `safeParse` the body with a zod schema and return `422` with `error.flatten()` on failure — never trust a client-supplied `userId`. All DB queries must explicitly scope by user ID and `isNull(table.deletedAt)`.
 - `expense_installments` (occurrences) is what all UI/reports read — never `expenses` directly.
 - Installments anchor to **purchase month + i**, never to the due date. Recurrence compares **calendar dates** (`toISODate`), inclusive of the start day.
 - Google OAuth is out of scope — email/password only.
-- End of every task below: if it's the first task to create a structurally complex folder (`src/lib/finance/`, `src/lib/supabase/`, `src/lib/schemas/`, `src/app/api/`), add a short `CLAUDE.md` in that folder stating its purpose/patterns. Always also refresh the root `CLAUDE.md` with what that task added to the project structure.
+- End of every task below: if it's the first task to create a structurally complex folder (`src/lib/finance/`, `src/db/`, `src/lib/auth/`, `src/lib/schemas/`, `src/app/api/`), add a short `CLAUDE.md` in that folder stating its purpose/patterns. Always also refresh the root `CLAUDE.md` with what that task added to the project structure.
 
 ---
 
@@ -39,21 +39,40 @@
 - Consumes: `twMerge` (Task 1), color tokens (Task 2)
 - Produces: `CARD_COLORS: { name: string; value: string }[]`, `resolveCardColor(value: string | null): string`, `<CardVisual size="lg"|"sm"|"xs" color={string} name={string} />`, `<CardColorPicker value={string} onChange={(value: string) => void} />` — consumed by Task 27 (expense form card select), Task 35 (`/ajustes` card form).
 
+> **Updated (2026-09-11) for the swift-spend visual migration:** the palette
+> and gradient below replace the original 6-hex sketch, ported from
+> `swift-spend/src/lib/finance/card-colors.ts` and
+> `swift-spend/src/components/app/CardVisual.tsx` (8 OKLCH presets, a 3-stop
+> gradient, and a glossy radial-highlight overlay). Still a plain styled
+> element, not a shadcn component, so this doesn't conflict with keeping
+> shadcn primitives elsewhere.
+
 - [ ] **Step 1: Write `src/lib/finance/card-colors.ts`**
 
 ```ts
-export const CARD_COLORS = [
-    { name: 'Roxo', value: '#8B5CF6' },
-    { name: 'Laranja', value: '#F97316' },
-    { name: 'Verde', value: '#10B981' },
-    { name: 'Azul', value: '#3B82F6' },
-    { name: 'Rosa', value: '#EC4899' },
-    { name: 'Cinza', value: '#6B7280' },
+export interface CardColor {
+    id: string
+    label: string
+    value: string
+}
+
+export const CARD_COLORS: CardColor[] = [
+    { id: 'orange', label: 'Laranja', value: 'oklch(0.65 0.21 38)' },
+    { id: 'purple', label: 'Roxo', value: 'oklch(0.5 0.24 300)' },
+    { id: 'blue', label: 'Azul', value: 'oklch(0.55 0.18 255)' },
+    { id: 'teal', label: 'Verde-água', value: 'oklch(0.6 0.13 190)' },
+    { id: 'green', label: 'Verde', value: 'oklch(0.58 0.16 150)' },
+    { id: 'pink', label: 'Rosa', value: 'oklch(0.65 0.2 350)' },
+    { id: 'yellow', label: 'Amarelo', value: 'oklch(0.78 0.16 85)' },
+    { id: 'graphite', label: 'Grafite', value: 'oklch(0.32 0.02 265)' },
 ]
 
-export function resolveCardColor(value: string | null): string {
-    if (value && CARD_COLORS.some((c) => c.value === value)) return value
-    return CARD_COLORS[0].value
+export const DEFAULT_CARD_COLOR = CARD_COLORS[0].value
+
+export function resolveCardColor(color?: string | null): string {
+    if (!color) return DEFAULT_CARD_COLOR
+    const preset = CARD_COLORS.find((c) => c.id === color || c.value === color)
+    return preset?.value ?? color
 }
 ```
 
@@ -74,36 +93,42 @@ const sizes: Record<Size, string> = {
 
 export interface CardVisualProps extends Omit<ComponentProps<'div'>, 'color'> {
     size: Size
-    color: string | null
+    color?: string | null
     name?: string
 }
 
 export function CardVisual({ size, color, name, className, ...props }: CardVisualProps) {
-    const resolved = resolveCardColor(color)
+    const base = resolveCardColor(color)
+    const background = `linear-gradient(135deg, color-mix(in oklab, ${base} 88%, white) 0%, ${base} 55%, color-mix(in oklab, ${base} 78%, black) 100%)`
 
     return (
         <div
             data-slot="card-visual"
-            className={twMerge(sizes[size], 'relative overflow-hidden text-white shadow-sm')}
-            style={{
-                background: `linear-gradient(135deg, ${resolved}, color-mix(in oklab, ${resolved} 60%, black))`,
-            }}
+            aria-hidden={!name}
+            className={twMerge(sizes[size], 'relative overflow-hidden shadow-sm', className)}
+            style={{ background }}
             {...props}
         >
             <div
-                className="absolute inset-0"
-                style={{ background: `radial-gradient(circle at 30% 0%, color-mix(in oklab, ${resolved} 40%, white) 0%, transparent 60%)` }}
+                className="pointer-events-none absolute inset-0 opacity-40"
+                style={{ background: 'radial-gradient(120% 80% at 15% 0%, rgb(255 255 255 / 0.45), transparent 60%)' }}
             />
             {size === 'lg' && (
                 <div className="relative flex h-full flex-col justify-between">
-                    <div className="h-5 w-7 rounded-sm bg-white/30" />
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{name}</span>
-                        <div className="flex">
-                            <div className="size-5 rounded-full bg-white/60" />
-                            <div className="-ml-2 size-5 rounded-full bg-white/40" />
+                    <span className="truncate font-display text-sm font-semibold text-white drop-shadow-sm">{name}</span>
+                    <div className="flex items-end justify-between">
+                        <div className="h-4 w-6 rounded-[4px] bg-white/35" />
+                        <div className="flex items-center">
+                            <div className="size-5 rounded-full bg-white/85" />
+                            <div className="-ml-2 size-5 rounded-full bg-white/45" />
                         </div>
                     </div>
+                </div>
+            )}
+            {size === 'sm' && (
+                <div className="relative mt-auto flex items-center self-end">
+                    <div className="size-3 rounded-full bg-white/85" />
+                    <div className="-ml-1.5 size-3 rounded-full bg-white/45" />
                 </div>
             )}
         </div>
@@ -163,6 +188,14 @@ git commit -m "feat: add cosmetic card-visual component and color picker"
 - Consumes: `parseExpenseInput`, `ParserContext` (Task 16); `useCards` (Task 19); `useCategories` (Task 20); `useMerchants` (Task 21); `useCreateExpense` (Task 22); `formatBRL` (Task 10)
 - Produces: `<QuickAdd autoFocus?: boolean />` — consumed by Task 32 (`/inicio`).
 
+> **Updated (2026-09-11) for the swift-spend visual migration:** wrap the
+> input in the `rounded-3xl border bg-card p-4 shadow-sm` hero block from
+> `swift-spend/src/components/app/QuickAdd.tsx`, size the input
+> `h-14 rounded-2xl border-2 text-lg font-medium`, and give the preview panel
+> the `rounded-2xl bg-secondary/60 p-3` treatment with `font-display text-2xl`
+> for the parsed amount. Still built on the shadcn `Input` component per the
+> plan's original structure — only sizing/shape classNames change.
+
 - [ ] **Step 1: Write `src/components/app/quick-add.tsx`**
 
 ```tsx
@@ -214,7 +247,7 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
     }
 
     return (
-        <div data-slot="quick-add" className="flex flex-col gap-2">
+        <div data-slot="quick-add" className="rounded-3xl border border-border bg-card p-4 shadow-sm">
             <Input
                 ref={inputRef}
                 autoFocus={autoFocus}
@@ -223,13 +256,14 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
                 onKeyDown={handleKeyDown}
                 placeholder="Ex: 1200 em 3x na americanas no nubank"
                 aria-label="Adicionar despesa por texto"
+                className="h-14 rounded-2xl border-2 text-lg font-medium"
             />
             {parsed && (
-                <div data-slot="quick-add-preview" className="rounded-lg border border-border bg-surface-raised p-2 text-sm text-foreground-subtle">
+                <div data-slot="quick-add-preview" className="mt-3 rounded-2xl bg-secondary/60 p-3 text-sm text-foreground-subtle">
                     {parsed.ambiguous || parsed.amount === null ? (
                         <span>Não consegui identificar o valor — confirme manualmente.</span>
                     ) : (
-                        <span>
+                        <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
                             {formatBRL(parsed.amount)}
                             {parsed.installments ? ` em ${parsed.installments}x` : ''}
                             {parsed.frequency ? ' (recorrente)' : ''}
@@ -328,6 +362,12 @@ git commit -m "feat: add manual expense form and dialog fallback"
 - Consumes: `OccurrenceRow` type (Task 23); `formatBRL` (Task 10); `CardVisual` (Task 25)
 - Produces: `<OccurrenceRow occurrence, onClick />`, `<OccurrenceList occurrences: OccurrenceRow[], showDateHeaders?: boolean, onSelect: (occurrence) => void />` — consumed by Task 32 (`/inicio`) and Task 33 (`/mes`).
 
+> **Updated (2026-09-11) for the swift-spend visual migration:** added the
+> forecast-vs-realized visual distinction from
+> `swift-spend/src/components/app/OccurrenceList.tsx` — forecast rows (status
+> not yet realized) get a dashed ring, reduced opacity, and a "Previsto" pill;
+> amounts use `font-display tabular-nums`.
+
 - [ ] **Step 1: Write `src/components/app/occurrence-row.tsx`**
 
 ```tsx
@@ -341,22 +381,38 @@ export interface OccurrenceRowProps {
 }
 
 export function OccurrenceRow({ occurrence, onClick }: OccurrenceRowProps) {
+    const forecast = occurrence.status === 'pending'
+
     return (
         <button
             type="button"
             data-slot="occurrence-row"
             data-status={occurrence.status}
+            data-forecast={forecast ? '' : undefined}
             onClick={onClick}
             className={twMerge(
-                'flex min-h-11 w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-muted',
+                'flex min-h-11 w-full items-center justify-between rounded-2xl px-3 py-2 text-left hover:bg-secondary/60',
                 'data-[status=cancelled]:opacity-50',
+                'data-[forecast]:opacity-70 data-[forecast]:ring-1 data-[forecast]:ring-dashed data-[forecast]:ring-border',
             )}
         >
-            <span className="text-foreground">
+            <span className="flex items-center gap-2 text-foreground">
                 {occurrence.description}
                 {occurrence.installments_total ? ` (${occurrence.installment_number}/${occurrence.installments_total})` : ''}
+                {forecast && (
+                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Previsto
+                    </span>
+                )}
             </span>
-            <span className="font-medium text-foreground">{formatBRL(occurrence.amount)}</span>
+            <span
+                className={twMerge(
+                    'font-display font-semibold tabular-nums text-foreground',
+                    forecast && 'text-muted-foreground',
+                )}
+            >
+                {formatBRL(occurrence.amount)}
+            </span>
         </button>
     )
 }
@@ -394,14 +450,20 @@ export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect 
         return acc
     }, {})
 
+    const todayISO = new Date().toISOString().slice(0, 10)
+
     return (
         <div data-slot="occurrence-list" className="flex flex-col gap-4">
             {Object.entries(grouped).map(([date, group]) => (
                 <div key={date}>
-                    <h3 className="px-3 pb-1 text-xs font-medium uppercase text-muted-foreground">{date}</h3>
-                    {group.map((occurrence) => (
-                        <OccurrenceRow key={occurrence.id} occurrence={occurrence} onClick={() => onSelect(occurrence)} />
-                    ))}
+                    <h3 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {date === todayISO ? 'Hoje' : date}
+                    </h3>
+                    <div className="divide-y divide-border/60">
+                        {group.map((occurrence) => (
+                            <OccurrenceRow key={occurrence.id} occurrence={occurrence} onClick={() => onSelect(occurrence)} />
+                        ))}
+                    </div>
                 </div>
             ))}
         </div>
@@ -529,6 +591,12 @@ git commit -m "feat: add occurrence edit/delete sheet with scope selection"
 - Consumes: `formatBRL` (Task 10); summary shape from `/api/reports/summary` (Task 24)
 - Produces: `<SummaryTiles total, byCategory, byCard />`, `<MonthSwitcher month: string, onChange: (month: string) => void />` — consumed by Task 32 (`/inicio`), Task 33 (`/mes`), Task 34 (`/relatorios`).
 
+> **Updated (2026-09-11) for the swift-spend visual migration:** aligned to
+> swift-spend's `rounded-2xl border bg-card p-3` stat-tile grid and
+> progress-bar category breakdown (`h-2 rounded-full bg-secondary` track /
+> `bg-primary` fill sized by percentage of total) instead of a plain stacked
+> `Card` list — still built with the shadcn `Card` primitive.
+
 - [ ] **Step 1: Write `src/components/app/summary-tiles.tsx`**
 
 ```tsx
@@ -542,36 +610,49 @@ export interface SummaryTilesProps {
 }
 
 export function SummaryTiles({ total, byCategory, byCard }: SummaryTilesProps) {
+    const categoryEntries = Object.entries(byCategory)
+    const cardEntries = Object.entries(byCard)
+
     return (
         <div data-slot="summary-tiles" className="grid grid-cols-1 gap-3">
-            <Card>
+            <Card className="rounded-2xl border-border p-3">
                 <CardHeader>
                     <CardTitle>Total do mês</CardTitle>
                 </CardHeader>
-                <CardContent className="text-2xl font-semibold text-foreground">{formatBRL(total)}</CardContent>
+                <CardContent className="font-display text-2xl font-semibold tabular-nums text-foreground">
+                    {formatBRL(total)}
+                </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-2xl border-border p-3">
                 <CardHeader>
                     <CardTitle>Por categoria</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-1 text-sm">
-                    {Object.entries(byCategory).map(([id, amount]) => (
-                        <div key={id} className="flex justify-between">
-                            <span className="text-foreground-subtle">{id}</span>
-                            <span className="text-foreground">{formatBRL(amount)}</span>
+                <CardContent className="flex flex-col gap-3 text-sm">
+                    {categoryEntries.map(([id, amount]) => (
+                        <div key={id} className="flex flex-col gap-1">
+                            <div className="flex justify-between">
+                                <span className="text-foreground-subtle">{id}</span>
+                                <span className="font-display tabular-nums text-foreground">{formatBRL(amount)}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-secondary">
+                                <div
+                                    className="h-2 rounded-full bg-primary"
+                                    style={{ width: `${total ? Math.min(100, (amount / total) * 100) : 0}%` }}
+                                />
+                            </div>
                         </div>
                     ))}
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-2xl border-border p-3">
                 <CardHeader>
                     <CardTitle>Por cartão</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-1 text-sm">
-                    {Object.entries(byCard).map(([id, amount]) => (
+                    {cardEntries.map(([id, amount]) => (
                         <div key={id} className="flex justify-between">
                             <span className="text-foreground-subtle">{id}</span>
-                            <span className="text-foreground">{formatBRL(amount)}</span>
+                            <span className="font-display tabular-nums text-foreground">{formatBRL(amount)}</span>
                         </div>
                     ))}
                 </CardContent>
@@ -640,6 +721,13 @@ git commit -m "feat: add summary tiles and month switcher components"
 **Interfaces:**
 - Consumes: `next/navigation` router (already used)
 - Produces: central `+` focuses the quick-add on `/inicio` instead of only navigating there.
+
+> **Note (2026-09-11):** the swift-spend visual migration already gave
+> `bottom-nav.tsx` its floating FAB (`-mt-6 size-14 rounded-full bg-primary
+> shadow-lg active:scale-95`) and the translucent `bg-surface/95
+> backdrop-blur` bar (see the revised Task 8 shell). This task now only needs
+> the `focus=quick-add` param → autofocus wiring below — no further visual
+> change required.
 
 - [ ] **Step 1: Update the center button behavior**
 

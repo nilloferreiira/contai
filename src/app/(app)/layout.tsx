@@ -14,8 +14,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     }
 
     return (
-        <div data-slot="app-shell" className="flex min-h-screen flex-col pb-16">
-            {children}
+        <div data-slot="app-shell" className="min-h-screen bg-background pb-28">
+            <div className="mx-auto w-full max-w-lg px-4 pt-6">{children}</div>
             <BottomNav />
         </div>
     )
