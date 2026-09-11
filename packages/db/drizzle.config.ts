@@ -2,7 +2,7 @@ import { defineConfig } from 'drizzle-kit'
 
 if (!process.env.DATABASE_URL) {
     try {
-        process.loadEnvFile('.env.local')
+        process.loadEnvFile('../../apps/web/.env.local')
     } catch {
         // ignore if file does not exist
     }
@@ -10,8 +10,8 @@ if (!process.env.DATABASE_URL) {
 
 export default defineConfig({
     dialect: 'postgresql',
-    schema: './src/db/schema/index.ts',
-    out: './src/db/migrations',
+    schema: './src/schema/index.ts',
+    out: './src/migrations',
     dbCredentials: {
         url: process.env.DATABASE_URL!,
     },
