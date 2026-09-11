@@ -9,6 +9,7 @@ export const passwordRequirements = [
 ] as const
 
 export const signUpSchema = z.object({
+    name: z.string().min(2, 'Informe seu nome'),
     email: z.string().email('Informe um e-mail válido'),
     password: z.string().refine((v) => passwordRequirements.every((r) => r.test(v)), {
         message: 'A senha não atende aos requisitos',

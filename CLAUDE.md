@@ -1,4 +1,4 @@
-# Bolso
+# Contai
 
 Mobile-first personal finance manager. Core feature: register an expense
 in under 15 seconds via a deterministic (regex, no AI) natural-language

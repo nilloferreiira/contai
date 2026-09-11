@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth-client'
 import { signInSchema, type SignInInput } from '@/lib/schemas/auth-schema'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,8 +27,7 @@ export default function LoginPage() {
     })
 
     const onSubmit = async (data: SignInInput) => {
-        const supabase = createClient()
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await authClient.signIn.email({
             email: data.email,
             password: data.password,
         })
@@ -45,7 +44,7 @@ export default function LoginPage() {
         <div data-slot="login-page" className="flex min-h-screen items-center justify-center bg-background p-4">
             <Card className="w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle>Entrar no Bolso</CardTitle>
+                    <CardTitle>Entrar no Contai</CardTitle>
                     <CardDescription>Entre com seu e-mail e senha para continuar</CardDescription>
                 </CardHeader>
                 <CardContent>

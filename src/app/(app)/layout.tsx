@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 import { BottomNav } from '@/components/app/bottom-nav'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-    const supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    })
 
-    if (!data.user) {
+    if (!session?.user) {
         redirect('/login')
     }
 

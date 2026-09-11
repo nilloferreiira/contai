@@ -33,7 +33,7 @@ Each row links to that section's full file (tasks, files, interfaces, step-by-st
 
 - [x] **Section A: Foundation** (Tasks 1-4) — `2026-09-09-bolso-mvp-implementation/section-a-foundation.md`
   Dependencies (Drizzle, Better Auth, Postgres, Tailwind, shadcn), ESLint rules, root CLAUDE.md, shadcn/ui init + tokens/fonts, QueryProvider + Toaster, vitest setup.
-- [ ] **Section B: PostgreSQL & Better Auth** (Tasks 5-8) — `2026-09-09-bolso-mvp-implementation/section-b-better-auth.md`
+- [x] **Section B: PostgreSQL & Better Auth** (Tasks 5-8) — `2026-09-09-bolso-mvp-implementation/section-b-better-auth.md`
   PostgreSQL connection + Drizzle instance, Better Auth server + JWT plugin + client, Next.js 16 proxy optimistic guard, `/login` + `/cadastro`, authenticated route guard + bottom nav shell.
 - [ ] **Section C: Database** (Task 9) — `2026-09-09-bolso-mvp-implementation/section-c-database.md`
   Drizzle ORM schema (`src/db/schema/*`), enums, relations, indexes, and Drizzle Kit migration workflow (`drizzle.config.ts`, `pnpm drizzle-kit push`/`generate`).

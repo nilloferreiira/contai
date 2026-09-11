@@ -2,11 +2,11 @@
 
 > Part of the full plan. Master checklist and progress tracking: `../2026-09-09-bolso-mvp-implementation.md`. Shared context below is duplicated from that file so this section can be worked on standalone.
 
-**Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js + Supabase.
+**Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js, PostgreSQL, Drizzle ORM, and Better Auth.
 
-**Architecture:** Next.js App Router with Server Components by default; Supabase for Postgres+Auth with per-user RLS; a DB-free pure domain layer (`src/lib/finance/`) handling invoice/installment/recurrence/parser math, unit-tested with vitest; thin API routes (`auth → zod → execute → JSON`) that call the domain layer and Supabase; React Query on the client for cache/mutations; shadcn/ui + tailwind-variants for components.
+**Architecture:** Next.js App Router with Server Components by default; PostgreSQL for persistence via Drizzle ORM (using `postgres.js`); Better Auth with JWT plugin for session management and token verification (JWKS-backed session cookie cache); a DB-free pure domain layer (`src/lib/finance/`) handling invoice/installment/recurrence/parser math, unit-tested with vitest; thin API routes (`auth → zod → execute → JSON`) that call the domain layer and Drizzle ORM; React Query on the client for cache/mutations; shadcn/ui + tailwind-variants for components.
 
-**Tech Stack:** Next.js 15+ (TS strict), pnpm, shadcn/ui, Supabase (`@supabase/supabase-js`, `@supabase/ssr`), `@tanstack/react-query` v5, zod, react-hook-form, Tailwind v4, tailwind-variants, tailwind-merge, lucide-react, sonner, date-fns, vitest.
+**Tech Stack:** Next.js 16+ (TS strict), pnpm, shadcn/ui, Better Auth (`better-auth`), Drizzle ORM (`drizzle-orm`, `drizzle-kit`), PostgreSQL driver (`postgres`), `@tanstack/react-query` v5, zod, react-hook-form, Tailwind v4, tailwind-variants, tailwind-merge, lucide-react, sonner, date-fns, vitest.
 
 **Spec:** `docs/superpowers/specs/2026-09-09-bolso-mvp-design.md`
 
@@ -14,16 +14,16 @@
 
 - Files: lowercase-with-hyphens (`user-card.tsx`, `use-modal.ts`).
 - Always named exports, never `export default` — except `page.tsx`, `layout.tsx`, and `route.ts` handlers (`GET`/`POST`/`PATCH`/`DELETE`), which Next.js requires.
-- No barrel files (`index.ts`) for internal folders.
+- No barrel files (`index.ts`) for internal folders (except `src/db/schema/index.ts` where Drizzle collects tables/relations).
 - Every UI component: `className={twMerge('base-classes', className)}`, `data-slot="<name>"` on the root element, state via `data-disabled={disabled ? '' : undefined}` (not boolean className logic), `{...props}` spread last, icon-only buttons need `aria-label`, icons use explicit `size-*` classes.
 - No hardcoded colors (`text-white`, `bg-[#hex]`) — only the tokens in `globals.css` (`bg-surface`, `text-foreground`, `border-border`, etc.).
 - TypeScript: never `React.FC`, never `any`; type-only imports (`import type { ComponentProps } from 'react'`); component props extend `ComponentProps<'tag'>` (+ `VariantProps<typeof xVariants>` when the component has variants).
-- Every API route under `src/app/api/*`: call `supabase.auth.getUser()` and return `401` if no user, `safeParse` the body with a zod schema and return `422` with `error.flatten()` on failure — never trust a client-supplied `user_id`.
+- Every API route under `src/app/api/*`: authenticate via Better Auth (`const session = await auth.api.getSession({ headers: await headers() })`) and return `401` if no user, `safeParse` the body with a zod schema and return `422` with `error.flatten()` on failure — never trust a client-supplied `user_id`. Always query using `session.user.id`.
+- Soft deletes only. `cards`, `categories`, `merchants`, `recurrences`, `expenses`, `installment_plans`, and `expense_installments` all have `deleted_at`. `DELETE` route handlers never call `.delete()` on these tables — they call `.update({ deletedAt: new Date() })`. Every query explicitly filters `and(eq(table.userId, session.user.id), isNull(table.deletedAt))`.
 - `expense_installments` (occurrences) is what all UI/reports read — never `expenses` directly.
-- Soft deletes only. `cards`, `categories`, `merchants`, `recurrences`, `expenses`, `installment_plans`, and `expense_installments` all have `deleted_at`. `DELETE` route handlers never call `.delete()` on these tables — they call `.update({ deleted_at: new Date().toISOString() })`. RLS already excludes `deleted_at is not null` rows, but every `select`/`update` against these tables still adds an explicit `.is('deleted_at', null)` (or, for a lookup already scoped `.eq('id', id)`, the same filter chained on) — RLS is defense in depth, not a reason to drop the app-level filter.
 - Installments anchor to **purchase month + i**, never to the due date. Recurrence compares **calendar dates** (`toISODate`), inclusive of the start day.
 - Google OAuth is out of scope — email/password only.
-- End of every task below: if it's the first task to create a structurally complex folder (`src/lib/finance/`, `src/lib/supabase/`, `src/lib/schemas/`, `src/app/api/`), add a short `CLAUDE.md` in that folder stating its purpose/patterns. Always also refresh the root `CLAUDE.md` with what that task added to the project structure.
+- End of every task below: if it's the first task to create a structurally complex folder (`src/lib/finance/`, `src/db/`, `src/lib/schemas/`, `src/app/api/`), add a short `CLAUDE.md` in that folder stating its purpose/patterns. Always also refresh the root `CLAUDE.md` with what that task added to the project structure.
 
 ---
 
@@ -205,49 +205,54 @@ git commit -m "feat: add API client, query keys, and card/category/expense schem
 - Create: `src/app/api/CLAUDE.md`
 
 **Interfaces:**
-- Consumes: `createClient` from `src/lib/supabase/server.ts` (Task 5); `createCardSchema`/`updateCardSchema` (Task 18); `apiClient`, `queryKeys` (Task 18)
+- Consumes: `auth` from `src/lib/auth.ts`, `db` from `src/db/index.ts` (Task 5); `createCardSchema`/`updateCardSchema` (Task 18); `apiClient`, `queryKeys` (Task 18)
 - Produces: `useCards()`, `useCreateCard()`, `useUpdateCard()`, `useDeleteCard()` — consumed by Task 27 (card form) and Task 35 (`/ajustes`).
 
 - [ ] **Step 1: Write `src/app/api/cards/route.ts`**
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { cards } from '@/db/schema'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import { createCardSchema } from '@/lib/schemas/card-schema'
 
 export async function GET() {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-    const { data, error } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('active', true)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: true })
+    const data = await db
+        .select()
+        .from(cards)
+        .where(and(eq(cards.userId, session.user.id), eq(cards.active, true), isNull(cards.deletedAt)))
+        .orderBy(asc(cards.createdAt))
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json(data)
 }
 
 export async function POST(request: Request) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = createCardSchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const { data, error } = await supabase
-        .from('cards')
-        .insert({ ...parsed.data, user_id: auth.user.id })
-        .select('*')
-        .single()
+    const [data] = await db
+        .insert(cards)
+        .values({
+            userId: session.user.id,
+            name: parsed.data.name,
+            closingDay: parsed.data.closing_day,
+            dueDay: parsed.data.due_day,
+            creditLimit: parsed.data.credit_limit != null ? String(parsed.data.credit_limit) : null,
+            color: parsed.data.color,
+        })
+        .returning()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json(data, { status: 201 })
 }
 ```
@@ -256,43 +261,51 @@ export async function POST(request: Request) {
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { cards } from '@/db/schema'
+import { and, eq, isNull } from 'drizzle-orm'
 import { updateCardSchema } from '@/lib/schemas/card-schema'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = updateCardSchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const { data, error } = await supabase
-        .from('cards')
-        .update(parsed.data)
-        .eq('id', id)
-        .is('deleted_at', null)
-        .select('*')
-        .single()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const updateData: Partial<typeof cards.$inferInsert> = {}
+    if (parsed.data.name !== undefined) updateData.name = parsed.data.name
+    if (parsed.data.closing_day !== undefined) updateData.closingDay = parsed.data.closing_day
+    if (parsed.data.due_day !== undefined) updateData.dueDay = parsed.data.due_day
+    if (parsed.data.credit_limit !== undefined) updateData.creditLimit = parsed.data.credit_limit != null ? String(parsed.data.credit_limit) : null
+    if (parsed.data.color !== undefined) updateData.color = parsed.data.color
+    if (parsed.data.active !== undefined) updateData.active = parsed.data.active
+
+    const [data] = await db
+        .update(cards)
+        .set(updateData)
+        .where(and(eq(cards.id, id), eq(cards.userId, session.user.id), isNull(cards.deletedAt)))
+        .returning()
+
+    if (!data) return NextResponse.json({ error: 'Cartão não encontrado' }, { status: 404 })
     return NextResponse.json(data)
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-    const { error } = await supabase
-        .from('cards')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id)
-        .is('deleted_at', null)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await db
+        .update(cards)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(cards.id, id), eq(cards.userId, session.user.id), isNull(cards.deletedAt)))
+
     return NextResponse.json({ ok: true })
 }
 ```
@@ -363,11 +376,10 @@ export function useDeleteCard() {
 # src/app/api
 
 Route handlers only — no business logic beyond auth → zod validate →
-call Supabase / `src/lib/finance` → respond JSON. Every handler starts
-with `supabase.auth.getUser()` and returns 401 if absent; RLS is defense
-in depth, not the only check. Named exports `GET`/`POST`/`PATCH`/`DELETE`
-(Next.js requirement — the one exception to "no default export" doesn't
-apply here since these are already named).
+call Drizzle ORM (`db`) / `src/lib/finance` → respond JSON. Every handler
+authenticates with `auth.api.getSession({ headers: await headers() })` and
+returns 401 if absent. Queries always scope by `userId` and `isNull(deletedAt)`.
+Named exports `GET`/`POST`/`PATCH`/`DELETE`.
 ```
 
 - [ ] **Step 5: Verify manually**
@@ -401,25 +413,31 @@ git commit -m "feat: add cards API routes and use-cards hook"
 - Create: `src/hooks/use-categories.ts`
 
 **Interfaces:**
-- Consumes: `createClient` (Task 5); `createCategorySchema`/`updateCategorySchema` (Task 18); `normalizeMerchantName`-style normalization reused inline (Task 14 covers merchants specifically — categories seed normalizes with the same `lower()`+accent-strip approach at the SQL level via the unique index, so app-level normalization here just needs `.toLowerCase().trim()` before comparing against existing names)
+- Consumes: `auth` from `src/lib/auth.ts`, `db` from `src/db/index.ts` (Task 5); `createCategorySchema`/`updateCategorySchema` (Task 18); `apiClient`, `queryKeys` (Task 18)
 - Produces: `useCategories()`, `useCreateCategory()`, `useUpdateCategory()`, `useDeleteCategory()` — consumed by Task 26 (quick-add / parser context) and Task 35 (`/ajustes`).
 
 - [ ] **Step 1: Write `src/app/api/categories/route.ts`**
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { categories } from '@/db/schema'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import { createCategorySchema } from '@/lib/schemas/category-schema'
 
 const DEFAULT_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Compras', 'Outros']
 
 export async function GET() {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-    const { data: existing, error } = await supabase.from('categories').select('*').is('deleted_at', null).order('name')
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const existing = await db
+        .select()
+        .from(categories)
+        .where(and(eq(categories.userId, session.user.id), isNull(categories.deletedAt)))
+        .orderBy(asc(categories.name))
 
     const existingNames = new Set(existing.map((c) => c.name.toLowerCase()))
     const missing = DEFAULT_CATEGORIES.filter((name) => !existingNames.has(name.toLowerCase()))
@@ -428,37 +446,40 @@ export async function GET() {
         return NextResponse.json(existing)
     }
 
-    const { data: inserted, error: insertError } = await supabase
-        .from('categories')
-        .insert(missing.map((name) => ({ name, user_id: auth.user.id })))
-        .select('*')
+    const inserted = await db
+        .insert(categories)
+        .values(missing.map((name) => ({ name, userId: session.user.id })))
+        .returning()
 
-    if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
-
-    return NextResponse.json([...existing, ...(inserted ?? [])].sort((a, b) => a.name.localeCompare(b.name)))
+    return NextResponse.json([...existing, ...inserted].sort((a, b) => a.name.localeCompare(b.name)))
 }
 
 export async function POST(request: Request) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = createCategorySchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const { data, error } = await supabase
-        .from('categories')
-        .insert({ ...parsed.data, user_id: auth.user.id })
-        .select('*')
-        .single()
+    try {
+        const [data] = await db
+            .insert(categories)
+            .values({
+                name: parsed.data.name,
+                icon: parsed.data.icon,
+                userId: session.user.id,
+            })
+            .returning()
 
-    if (error) {
-        if (error.code === '23505') return NextResponse.json({ error: 'Categoria já existe' }, { status: 409 })
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json(data, { status: 201 })
+    } catch (error: any) {
+        if (error?.code === '23505') {
+            return NextResponse.json({ error: 'Categoria já existe' }, { status: 409 })
+        }
+        return NextResponse.json({ error: error?.message || 'Erro ao criar categoria' }, { status: 500 })
     }
-    return NextResponse.json(data, { status: 201 })
 }
 ```
 
@@ -466,43 +487,43 @@ export async function POST(request: Request) {
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { categories } from '@/db/schema'
+import { and, eq, isNull } from 'drizzle-orm'
 import { updateCategorySchema } from '@/lib/schemas/category-schema'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = updateCategorySchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const { data, error } = await supabase
-        .from('categories')
-        .update(parsed.data)
-        .eq('id', id)
-        .is('deleted_at', null)
-        .select('*')
-        .single()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const [data] = await db
+        .update(categories)
+        .set(parsed.data)
+        .where(and(eq(categories.id, id), eq(categories.userId, session.user.id), isNull(categories.deletedAt)))
+        .returning()
+
+    if (!data) return NextResponse.json({ error: 'Categoria não encontrada' }, { status: 404 })
     return NextResponse.json(data)
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-    const { error } = await supabase
-        .from('categories')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', id)
-        .is('deleted_at', null)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await db
+        .update(categories)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(categories.id, id), eq(categories.userId, session.user.id), isNull(categories.deletedAt)))
+
     return NextResponse.json({ ok: true })
 }
 ```
@@ -581,7 +602,7 @@ export function useDeleteCategory() {
 pnpm dev
 ```
 
-In the browser console (logged in), call `fetch('/api/categories').then(r => r.json()).then(console.log)` twice in a row — confirm the 7 defaults are seeded once and the second call returns the same 7 without duplicates (check the Supabase table editor to be sure `categories_user_name_unique` was never violated).
+In the browser console (logged in), call `fetch('/api/categories').then(r => r.json()).then(console.log)` twice in a row — confirm the 7 defaults are seeded once and the second call returns the same 7 without duplicates (check the database or Drizzle Studio `pnpm drizzle-kit studio` to be sure `categories_user_name_unique` was never violated).
 
 - [ ] **Step 5: Commit**
 
@@ -599,26 +620,29 @@ git commit -m "feat: add categories API with idempotent default seed"
 - Create: `src/hooks/use-merchants.ts`
 
 **Interfaces:**
-- Consumes: `createClient` (Task 5)
+- Consumes: `auth` from `src/lib/auth.ts`, `db` from `src/db/index.ts` (Task 5)
 - Produces: `useMerchants()` returning merchants ordered by `usage_count` desc — consumed by Task 16's `ParserContext` wiring inside Task 26 (`quick-add.tsx`).
 
 - [ ] **Step 1: Write `src/app/api/merchants/route.ts`**
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { merchants } from '@/db/schema'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 
 export async function GET() {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-    const { data, error } = await supabase
-        .from('merchants')
-        .select('*')
-        .is('deleted_at', null)
-        .order('usage_count', { ascending: false })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const data = await db
+        .select()
+        .from(merchants)
+        .where(and(eq(merchants.userId, session.user.id), isNull(merchants.deletedAt)))
+        .orderBy(desc(merchants.usageCount))
+
     return NextResponse.json(data)
 }
 ```
@@ -668,196 +692,199 @@ git commit -m "feat: add merchants API route and hook"
 - Create: `src/hooks/use-create-expense.ts`
 
 **Interfaces:**
-- Consumes: `createClient` (Task 5); `createExpenseSchema` (Task 18); `getInvoiceForExpense` (Task 11); `generateInstallments` (Task 12); `generateRecurrenceOccurrences` (Task 13); `normalizeMerchantName` (Task 14)
-- Produces: `createExpenseWithOccurrences(supabase, userId, input): Promise<{ expense: object; occurrences: object[] }>` (exported for potential reuse) and `useCreateExpense()` — consumed by Task 26 (quick-add) and Task 27 (manual dialog).
+- Consumes: `auth` from `@/lib/auth` (Task 5); `db` from `@/db` (Task 6); `createExpenseSchema` (Task 18); `getInvoiceForExpense` (Task 11); `generateInstallments` (Task 12); `generateRecurrenceOccurrences` (Task 13); `normalizeMerchantName` (Task 14)
+- Produces: `createExpenseWithOccurrences(userId, input): Promise<{ expense: object; occurrences: object[] }>` (exported for potential reuse) and `useCreateExpense()` — consumed by Task 26 (quick-add) and Task 27 (manual dialog).
 
 - [ ] **Step 1: Write `src/app/api/expenses/route.ts`**
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { cards, expenses, expenseInstallments, installmentPlans, merchants, recurrences } from '@/db/schema'
+import { and, eq, isNull } from 'drizzle-orm'
 import { createExpenseSchema, type CreateExpenseInput } from '@/lib/schemas/expense-schema'
 import { getInvoiceForExpense, type CardCycle } from '@/lib/finance/invoice'
 import { generateInstallments } from '@/lib/finance/installments'
 import { generateRecurrenceOccurrences } from '@/lib/finance/recurrence'
 import { normalizeMerchantName } from '@/lib/finance/merchants'
 import { toISODate } from '@/lib/finance/date'
-import type { SupabaseClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = createExpenseSchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const result = await createExpenseWithOccurrences(supabase, auth.user.id, parsed.data)
+    const result = await createExpenseWithOccurrences(session.user.id, parsed.data)
     return NextResponse.json(result, { status: 201 })
 }
 
 export async function createExpenseWithOccurrences(
-    supabase: SupabaseClient,
     userId: string,
     input: CreateExpenseInput,
 ) {
-    let merchantId: string | null = null
-    if (input.merchantName) {
-        const normalized = normalizeMerchantName(input.merchantName)
-        const { data: existing } = await supabase
-            .from('merchants')
-            .select('*')
-            .eq('normalized_name', normalized)
-            .is('deleted_at', null)
-            .maybeSingle()
+    return await db.transaction(async (tx) => {
+        let merchantId: string | null = null
+        if (input.merchantName) {
+            const normalized = normalizeMerchantName(input.merchantName)
+            const [existing] = await tx
+                .select()
+                .from(merchants)
+                .where(and(eq(merchants.normalizedName, normalized), eq(merchants.userId, userId), isNull(merchants.deletedAt)))
+                .limit(1)
 
-        if (existing) {
-            merchantId = existing.id
-            await supabase.from('merchants').update({ usage_count: existing.usage_count + 1 }).eq('id', existing.id)
-        } else {
-            const { data: created } = await supabase
-                .from('merchants')
-                .insert({
-                    user_id: userId,
-                    normalized_name: normalized,
-                    display_name: input.merchantName,
-                    default_category_id: input.categoryId ?? null,
-                    default_card_id: input.cardId ?? null,
-                    usage_count: 1,
-                })
-                .select('*')
-                .single()
-            merchantId = created?.id ?? null
+            if (existing) {
+                merchantId = existing.id
+                await tx
+                    .update(merchants)
+                    .set({ usageCount: existing.usageCount + 1 })
+                    .where(eq(merchants.id, existing.id))
+            } else {
+                const [created] = await tx
+                    .insert(merchants)
+                    .values({
+                        userId,
+                        normalizedName: normalized,
+                        displayName: input.merchantName,
+                        defaultCategoryId: input.categoryId ?? null,
+                        defaultCardId: input.cardId ?? null,
+                        usageCount: 1,
+                    })
+                    .returning()
+                merchantId = created.id
+            }
         }
-    }
 
-    const { data: expense, error: expenseError } = await supabase
-        .from('expenses')
-        .insert({
-            user_id: userId,
-            type: input.type,
-            description: input.description,
-            merchant_id: merchantId,
-            category_id: input.categoryId ?? null,
-            card_id: input.cardId ?? null,
-            total_amount: input.amount,
-            purchase_date: toISODate(input.purchaseDate),
-            notes: input.notes ?? null,
-        })
-        .select('*')
-        .single()
-
-    if (expenseError) throw new Error(expenseError.message)
-
-    let card: CardCycle | null = null
-    if (input.cardId) {
-        const { data: cardRow } = await supabase
-            .from('cards')
-            .select('closing_day, due_day')
-            .eq('id', input.cardId)
-            .is('deleted_at', null)
-            .single()
-        card = cardRow ?? null
-    }
-
-    if (input.type === 'installment' && input.installments) {
-        const { data: plan } = await supabase
-            .from('installment_plans')
-            .insert({ expense_id: expense.id, user_id: userId, installments_total: input.installments })
-            .select('*')
-            .single()
-
-        const installments = generateInstallments(input.amount, input.installments, input.purchaseDate, card)
-        const { data: occurrences, error } = await supabase
-            .from('expense_installments')
-            .insert(
-                installments.map((installment) => ({
-                    user_id: userId,
-                    expense_id: expense.id,
-                    installment_plan_id: plan?.id,
-                    merchant_id: merchantId,
-                    category_id: input.categoryId ?? null,
-                    card_id: input.cardId ?? null,
-                    description: input.description,
-                    ...installment,
-                })),
-            )
-            .select('*')
-
-        if (error) throw new Error(error.message)
-        return { expense, occurrences }
-    }
-
-    if (input.type === 'recurring' && input.frequency) {
-        const { data: recurrence } = await supabase
-            .from('recurrences')
-            .insert({
-                user_id: userId,
-                frequency: input.frequency,
-                start_date: toISODate(input.purchaseDate),
-                end_date: input.endDate ?? null,
+        const [expense] = await tx
+            .insert(expenses)
+            .values({
+                userId,
+                type: input.type,
+                description: input.description,
+                merchantId,
+                categoryId: input.categoryId ?? null,
+                cardId: input.cardId ?? null,
+                totalAmount: String(input.amount),
+                purchaseDate: toISODate(input.purchaseDate),
+                notes: input.notes ?? null,
             })
-            .select('*')
-            .single()
+            .returning()
 
-        const untilDate = new Date(input.purchaseDate)
-        untilDate.setMonth(untilDate.getMonth() + 12)
-        const dates = generateRecurrenceOccurrences(
-            input.purchaseDate,
-            input.frequency,
-            untilDate,
-            input.endDate ? new Date(input.endDate) : null,
-        )
+        let card: CardCycle | null = null
+        if (input.cardId) {
+            const [cardRow] = await tx
+                .select({ closing_day: cards.closingDay, due_day: cards.dueDay })
+                .from(cards)
+                .where(and(eq(cards.id, input.cardId), eq(cards.userId, userId), isNull(cards.deletedAt)))
+                .limit(1)
+            card = cardRow ?? null
+        }
 
-        const { data: occurrences, error } = await supabase
-            .from('expense_installments')
-            .insert(
-                dates.map((date) => {
-                    const occurrenceDate = new Date(date)
-                    const invoice = getInvoiceForExpense(occurrenceDate, card)
-                    return {
-                        user_id: userId,
-                        expense_id: expense.id,
-                        recurrence_id: recurrence?.id,
-                        merchant_id: merchantId,
-                        category_id: input.categoryId ?? null,
-                        card_id: input.cardId ?? null,
+        if (input.type === 'installment' && input.installments) {
+            const [plan] = await tx
+                .insert(installmentPlans)
+                .values({
+                    expenseId: expense.id,
+                    userId,
+                    installmentsTotal: input.installments,
+                })
+                .returning()
+
+            const installments = generateInstallments(input.amount, input.installments, input.purchaseDate, card)
+            const occurrences = await tx
+                .insert(expenseInstallments)
+                .values(
+                    installments.map((installment) => ({
+                        userId,
+                        expenseId: expense.id,
+                        installmentPlanId: plan.id,
+                        merchantId,
+                        categoryId: input.categoryId ?? null,
+                        cardId: input.cardId ?? null,
                         description: input.description,
-                        amount: input.amount,
-                        occurrence_date: date,
-                        due_date: toISODate(invoice.dueDate),
-                        invoice_month: invoice.month,
-                    }
-                }),
+                        installmentNumber: installment.installment_number,
+                        installmentsTotal: installment.installments_total,
+                        amount: String(installment.amount),
+                        occurrenceDate: installment.occurrence_date,
+                        dueDate: installment.due_date,
+                        invoiceMonth: installment.invoice_month,
+                    }))
+                )
+                .returning()
+
+            return { expense, occurrences }
+        }
+
+        if (input.type === 'recurring' && input.frequency) {
+            const [recurrence] = await tx
+                .insert(recurrences)
+                .values({
+                    userId,
+                    frequency: input.frequency,
+                    startDate: toISODate(input.purchaseDate),
+                    endDate: input.endDate ?? null,
+                })
+                .returning()
+
+            const untilDate = new Date(input.purchaseDate)
+            untilDate.setMonth(untilDate.getMonth() + 12)
+            const dates = generateRecurrenceOccurrences(
+                input.purchaseDate,
+                input.frequency,
+                untilDate,
+                input.endDate ? new Date(input.endDate) : null,
             )
-            .select('*')
 
-        if (error) throw new Error(error.message)
-        return { expense, occurrences }
-    }
+            const occurrences = await tx
+                .insert(expenseInstallments)
+                .values(
+                    dates.map((date) => {
+                        const occurrenceDate = new Date(date)
+                        const invoice = getInvoiceForExpense(occurrenceDate, card)
+                        return {
+                            userId,
+                            expenseId: expense.id,
+                            recurrenceId: recurrence.id,
+                            merchantId,
+                            categoryId: input.categoryId ?? null,
+                            cardId: input.cardId ?? null,
+                            description: input.description,
+                            amount: String(input.amount),
+                            occurrenceDate: date,
+                            dueDate: toISODate(invoice.dueDate),
+                            invoiceMonth: invoice.month,
+                        }
+                    })
+                )
+                .returning()
 
-    const invoice = getInvoiceForExpense(input.purchaseDate, card)
-    const { data: occurrence, error } = await supabase
-        .from('expense_installments')
-        .insert({
-            user_id: userId,
-            expense_id: expense.id,
-            merchant_id: merchantId,
-            category_id: input.categoryId ?? null,
-            card_id: input.cardId ?? null,
-            description: input.description,
-            amount: input.amount,
-            occurrence_date: toISODate(input.purchaseDate),
-            due_date: toISODate(invoice.dueDate),
-            invoice_month: invoice.month,
-        })
-        .select('*')
-        .single()
+            return { expense, occurrences }
+        }
 
-    if (error) throw new Error(error.message)
-    return { expense, occurrences: [occurrence] }
+        const invoice = getInvoiceForExpense(input.purchaseDate, card)
+        const [occurrence] = await tx
+            .insert(expenseInstallments)
+            .values({
+                userId,
+                expenseId: expense.id,
+                merchantId,
+                categoryId: input.categoryId ?? null,
+                cardId: input.cardId ?? null,
+                description: input.description,
+                amount: String(input.amount),
+                occurrenceDate: toISODate(input.purchaseDate),
+                dueDate: toISODate(invoice.dueDate),
+                invoiceMonth: invoice.month,
+            })
+            .returning()
+
+        return { expense, occurrences: [occurrence] }
+    })
 }
 ```
 
@@ -913,43 +940,49 @@ git commit -m "feat: add expenses API tying invoice/installments/recurrence toge
 - Create: `src/hooks/use-occurrences.ts`
 
 **Interfaces:**
-- Consumes: `createClient` (Task 5), `OccurrenceFilters` type (Task 18)
+- Consumes: `auth` from `@/lib/auth` (Task 5); `db` from `@/db` (Task 6); `OccurrenceFilters` type (Task 18)
 - Produces: `useOccurrences(filters)`, `useUpdateOccurrence()`, `useDeleteOccurrence()` — consumed by Task 28 (`occurrence-list.tsx`) and Task 29 (`occurrence-sheet.tsx`).
 
 - [ ] **Step 1: Write `src/app/api/occurrences/route.ts`**
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { expenseInstallments } from '@/db/schema'
+import { and, desc, eq, ilike, isNull, gte, lte } from 'drizzle-orm'
 
 export async function GET(request: Request) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const url = new URL(request.url)
-    let query = supabase
-        .from('expense_installments')
-        .select('*')
-        .is('deleted_at', null)
-        .order('occurrence_date', { ascending: false })
-
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
     const q = url.searchParams.get('q')
     const categoryId = url.searchParams.get('categoryId')
     const cardId = url.searchParams.get('cardId')
-    const status = url.searchParams.get('status')
+    const status = url.searchParams.get('status') as 'pending' | 'paid' | 'cancelled' | null
 
-    if (from) query = query.gte('occurrence_date', from)
-    if (to) query = query.lte('occurrence_date', to)
-    if (q) query = query.ilike('description', `%${q}%`)
-    if (categoryId) query = query.eq('category_id', categoryId)
-    if (cardId) query = query.eq('card_id', cardId)
-    if (status) query = query.eq('status', status)
+    const conditions = [
+        eq(expenseInstallments.userId, session.user.id),
+        isNull(expenseInstallments.deletedAt),
+    ]
 
-    const { data, error } = await query
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (from) conditions.push(gte(expenseInstallments.occurrenceDate, from))
+    if (to) conditions.push(lte(expenseInstallments.occurrenceDate, to))
+    if (q) conditions.push(ilike(expenseInstallments.description, `%${q}%`))
+    if (categoryId) conditions.push(eq(expenseInstallments.categoryId, categoryId))
+    if (cardId) conditions.push(eq(expenseInstallments.cardId, cardId))
+    if (status) conditions.push(eq(expenseInstallments.status, status))
+
+    const data = await db
+        .select()
+        .from(expenseInstallments)
+        .where(and(...conditions))
+        .orderBy(desc(expenseInstallments.occurrenceDate))
+
     return NextResponse.json(data)
 }
 ```
@@ -958,8 +991,12 @@ export async function GET(request: Request) {
 
 ```ts
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { expenseInstallments } from '@/db/schema'
+import { and, eq, gte, isNull } from 'drizzle-orm'
 
 const patchSchema = z.object({
     status: z.enum(['pending', 'paid', 'cancelled']).optional(),
@@ -974,57 +1011,80 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const url = new URL(request.url)
     const scope = url.searchParams.get('scope') ?? 'occurrence'
 
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = patchSchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const patch = {
+    const patch: Partial<typeof expenseInstallments.$inferInsert> = {
         ...(parsed.data.status && { status: parsed.data.status }),
-        ...(parsed.data.amount && { amount: parsed.data.amount }),
+        ...(parsed.data.amount && { amount: String(parsed.data.amount) }),
         ...(parsed.data.description && { description: parsed.data.description }),
-        ...(parsed.data.categoryId !== undefined && { category_id: parsed.data.categoryId }),
-        ...(parsed.data.cardId !== undefined && { card_id: parsed.data.cardId }),
+        ...(parsed.data.categoryId !== undefined && { categoryId: parsed.data.categoryId }),
+        ...(parsed.data.cardId !== undefined && { cardId: parsed.data.cardId }),
     }
 
     if (scope === 'occurrence') {
-        const { data, error } = await supabase
-            .from('expense_installments')
-            .update(patch)
-            .eq('id', id)
-            .is('deleted_at', null)
-            .select('*')
-            .single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        const [data] = await db
+            .update(expenseInstallments)
+            .set(patch)
+            .where(
+                and(
+                    eq(expenseInstallments.id, id),
+                    eq(expenseInstallments.userId, session.user.id),
+                    isNull(expenseInstallments.deletedAt),
+                )
+            )
+            .returning()
+
+        if (!data) return NextResponse.json({ error: 'Ocorrência não encontrada' }, { status: 404 })
         return NextResponse.json(data)
     }
 
-    const { data: current } = await supabase
-        .from('expense_installments')
-        .select('*')
-        .eq('id', id)
-        .is('deleted_at', null)
-        .single()
+    const [current] = await db
+        .select()
+        .from(expenseInstallments)
+        .where(
+            and(
+                eq(expenseInstallments.id, id),
+                eq(expenseInstallments.userId, session.user.id),
+                isNull(expenseInstallments.deletedAt),
+            )
+        )
+        .limit(1)
+
     if (!current) return NextResponse.json({ error: 'Ocorrência não encontrada' }, { status: 404 })
 
-    let query = supabase.from('expense_installments').update(patch).is('deleted_at', null)
+    const conditions = [
+        eq(expenseInstallments.userId, session.user.id),
+        isNull(expenseInstallments.deletedAt),
+    ]
 
-    if (scope === 'future' && current.installment_plan_id) {
-        query = query.eq('installment_plan_id', current.installment_plan_id).gte('occurrence_date', current.occurrence_date)
-    } else if (scope === 'series' && current.recurrence_id) {
-        query = query.eq('recurrence_id', current.recurrence_id)
-    } else if (scope === 'end' && current.recurrence_id) {
-        query = query.eq('recurrence_id', current.recurrence_id).gte('occurrence_date', current.occurrence_date)
+    if (scope === 'future' && current.installmentPlanId) {
+        conditions.push(
+            eq(expenseInstallments.installmentPlanId, current.installmentPlanId),
+            gte(expenseInstallments.occurrenceDate, current.occurrenceDate),
+        )
+    } else if (scope === 'series' && current.recurrenceId) {
+        conditions.push(eq(expenseInstallments.recurrenceId, current.recurrenceId))
+    } else if (scope === 'end' && current.recurrenceId) {
+        conditions.push(
+            eq(expenseInstallments.recurrenceId, current.recurrenceId),
+            gte(expenseInstallments.occurrenceDate, current.occurrenceDate),
+        )
     } else {
         return NextResponse.json({ error: 'Escopo inválido para esta ocorrência' }, { status: 422 })
     }
 
-    const { data, error } = await query.select('*')
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const data = await db
+        .update(expenseInstallments)
+        .set(patch)
+        .where(and(...conditions))
+        .returning()
+
     return NextResponse.json(data)
 }
 
@@ -1033,44 +1093,68 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const url = new URL(request.url)
     const scope = url.searchParams.get('scope') ?? 'occurrence'
 
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-    const deletedAt = new Date().toISOString()
+    const deletedAt = new Date()
 
     if (scope === 'occurrence') {
-        const { error } = await supabase
-            .from('expense_installments')
-            .update({ deleted_at: deletedAt })
-            .eq('id', id)
-            .is('deleted_at', null)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        const [deleted] = await db
+            .update(expenseInstallments)
+            .set({ deletedAt })
+            .where(
+                and(
+                    eq(expenseInstallments.id, id),
+                    eq(expenseInstallments.userId, session.user.id),
+                    isNull(expenseInstallments.deletedAt),
+                )
+            )
+            .returning()
+
+        if (!deleted) return NextResponse.json({ error: 'Ocorrência não encontrada' }, { status: 404 })
         return NextResponse.json({ ok: true })
     }
 
-    const { data: current } = await supabase
-        .from('expense_installments')
-        .select('*')
-        .eq('id', id)
-        .is('deleted_at', null)
-        .single()
+    const [current] = await db
+        .select()
+        .from(expenseInstallments)
+        .where(
+            and(
+                eq(expenseInstallments.id, id),
+                eq(expenseInstallments.userId, session.user.id),
+                isNull(expenseInstallments.deletedAt),
+            )
+        )
+        .limit(1)
+
     if (!current) return NextResponse.json({ error: 'Ocorrência não encontrada' }, { status: 404 })
 
-    let query = supabase.from('expense_installments').update({ deleted_at: deletedAt }).is('deleted_at', null)
+    const conditions = [
+        eq(expenseInstallments.userId, session.user.id),
+        isNull(expenseInstallments.deletedAt),
+    ]
 
-    if (scope === 'future' && current.installment_plan_id) {
-        query = query.eq('installment_plan_id', current.installment_plan_id).gte('occurrence_date', current.occurrence_date)
-    } else if (scope === 'series' && current.recurrence_id) {
-        query = query.eq('recurrence_id', current.recurrence_id)
-    } else if (scope === 'end' && current.recurrence_id) {
-        query = query.eq('recurrence_id', current.recurrence_id).gte('occurrence_date', current.occurrence_date)
+    if (scope === 'future' && current.installmentPlanId) {
+        conditions.push(
+            eq(expenseInstallments.installmentPlanId, current.installmentPlanId),
+            gte(expenseInstallments.occurrenceDate, current.occurrenceDate),
+        )
+    } else if (scope === 'series' && current.recurrenceId) {
+        conditions.push(eq(expenseInstallments.recurrenceId, current.recurrenceId))
+    } else if (scope === 'end' && current.recurrenceId) {
+        conditions.push(
+            eq(expenseInstallments.recurrenceId, current.recurrenceId),
+            gte(expenseInstallments.occurrenceDate, current.occurrenceDate),
+        )
     } else {
         return NextResponse.json({ error: 'Escopo inválido para esta ocorrência' }, { status: 422 })
     }
 
-    const { error } = await query
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await db
+        .update(expenseInstallments)
+        .set({ deletedAt })
+        .where(and(...conditions))
+
     return NextResponse.json({ ok: true })
 }
 ```
@@ -1141,7 +1225,7 @@ export function useDeleteOccurrence() {
 pnpm dev
 ```
 
-Reuse the installment expense created in Task 22's verification. `fetch('/api/occurrences?status=pending')` — confirm all 3 rows. `PATCH /api/occurrences/<id-of-2nd>?scope=future` with `{ status: 'paid' }` — confirm installments 2 and 3 flip to paid, installment 1 stays pending. Then `fetch('/api/occurrences/<id-of-2nd>?scope=occurrence', { method: 'DELETE' })` and confirm it disappears from `GET /api/occurrences`, but in the Supabase table editor the row is still present in `expense_installments` with `deleted_at` set (a real row, not gone) — confirming the delete was soft.
+Reuse the installment expense created in Task 22's verification. `fetch('/api/occurrences?status=pending')` — confirm all 3 rows. `PATCH /api/occurrences/<id-of-2nd>?scope=future` with `{ status: 'paid' }` — confirm installments 2 and 3 flip to paid, installment 1 stays pending. Then `fetch('/api/occurrences/<id-of-2nd>?scope=occurrence', { method: 'DELETE' })` and confirm it disappears from `GET /api/occurrences`, but in the database the row is still present in `expense_installments` with `deleted_at` set (a real row, not gone) — confirming the delete was soft.
 
 - [ ] **Step 5: Commit**
 
@@ -1158,33 +1242,52 @@ git commit -m "feat: add occurrences API with scoped soft-delete/edit"
 - Create: `src/app/api/reports/summary/route.ts`
 
 **Interfaces:**
-- Consumes: `createClient` (Task 5), `summarizeMonth` (Task 17)
+- Consumes: `auth` from `@/lib/auth` (Task 5); `db` from `@/db` (Task 6); `summarizeMonth` (Task 17)
 - Produces: `GET /api/reports/summary?month=YYYY-MM` → `{ total, byCategory, byCard }` — consumed by Task 34 (`/relatorios`).
 
 - [ ] **Step 1: Write `src/app/api/reports/summary/route.ts`**
 
 ```ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
+import { db } from '@/db'
+import { expenseInstallments } from '@/db/schema'
+import { and, eq, isNull } from 'drizzle-orm'
 import { summarizeMonth } from '@/lib/finance/dashboard'
 
 export async function GET(request: Request) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const url = new URL(request.url)
     const month = url.searchParams.get('month')
     if (!month) return NextResponse.json({ error: 'Informe o mês' }, { status: 422 })
 
-    const { data, error } = await supabase
-        .from('expense_installments')
-        .select('amount, category_id, card_id, status')
-        .eq('invoice_month', month)
-        .is('deleted_at', null)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const rows = await db
+        .select({
+            amount: expenseInstallments.amount,
+            category_id: expenseInstallments.categoryId,
+            card_id: expenseInstallments.cardId,
+            status: expenseInstallments.status,
+        })
+        .from(expenseInstallments)
+        .where(
+            and(
+                eq(expenseInstallments.userId, session.user.id),
+                eq(expenseInstallments.invoiceMonth, month),
+                isNull(expenseInstallments.deletedAt),
+            )
+        )
 
-    return NextResponse.json(summarizeMonth(data))
+    const formattedRows = rows.map((r) => ({
+        amount: Number(r.amount),
+        category_id: r.category_id,
+        card_id: r.card_id,
+        status: r.status,
+    }))
+
+    return NextResponse.json(summarizeMonth(formattedRows))
 }
 ```
 

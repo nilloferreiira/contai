@@ -1,20 +1,22 @@
 # Bolso MVP — Design Spec
 
-Personal finance manager, mobile-first, Next.js + Supabase. Core value
+Personal finance manager, mobile-first, Next.js + PostgreSQL + Drizzle ORM + Better Auth (JWT). Core value
 prop: register an expense in under 15 seconds using natural language,
 parsed deterministically (regex-based, no AI).
 
 Project scaffolding (`create-next-app`) is already done — out of
 scope here. **Google OAuth is deferred post-MVP; MVP auth is
-email/password only.** The Supabase project itself does not exist yet
-and must be created as part of implementation.
+email/password only.** The PostgreSQL database instance is provisioned
+and connected via environment variable `DATABASE_URL`.
 
 ## 1. Required stack
 
-- Next.js 15+ (App Router, TypeScript strict, Server Components by default)
+- Next.js 16+ (App Router, TypeScript strict, Server Components by default)
 - pnpm
 - shadcn/ui (Radix underneath)
-- Supabase for Auth (email/password) and Postgres (per-user RLS)
+- PostgreSQL with `postgres` (postgres.js) driver
+- Drizzle ORM (`drizzle-orm`, `drizzle-kit`) for typed database schema and queries
+- Better Auth (`better-auth` with JWT plugin, `@better-auth/cli`) for authentication with signed JWT cookies
 - @tanstack/react-query v5 for client cache/mutations
 - zod for validation (forms + API payloads)
 - react-hook-form + @hookform/resolvers/zod
@@ -29,8 +31,8 @@ and must be created as part of implementation.
 ```bash
 pnpm dlx shadcn@latest init
 pnpm dlx shadcn@latest add button card input label select dialog sheet drawer tabs badge switch separator skeleton popover calendar command scroll-area
-pnpm add @supabase/supabase-js @supabase/ssr @tanstack/react-query @tanstack/react-query-devtools zod react-hook-form @hookform/resolvers tailwind-variants tailwind-merge lucide-react sonner date-fns
-pnpm add -D vitest @vitejs/plugin-react jsdom @testing-library/react
+pnpm add better-auth @better-auth/cli drizzle-orm postgres @tanstack/react-query @tanstack/react-query-devtools zod react-hook-form @hookform/resolvers tailwind-variants tailwind-merge lucide-react sonner date-fns
+pnpm add -D drizzle-kit vitest @vitejs/plugin-react jsdom @testing-library/react @types/pg
 ```
 
 ## 2. Code rules (non-negotiable)
@@ -245,6 +247,7 @@ src/
 │   │   ├── relatorios/page.tsx
 │   │   └── ajustes/page.tsx
 │   └── api/
+│       ├── auth/[...all]/route.ts      # Better Auth handler
 │       ├── cards/route.ts              # GET, POST
 │       ├── cards/[id]/route.ts         # PATCH, DELETE
 │       ├── categories/route.ts         # GET, POST
@@ -271,6 +274,12 @@ src/
 │       ├── expense-form.tsx
 │       ├── card-form.tsx
 │       └── category-form.tsx
+├── db/
+│   ├── index.ts                        # postgres client + drizzle instance
+│   └── schema/
+│       ├── index.ts                    # schema re-exports
+│       ├── auth.ts                     # Better Auth tables (user, session, account, verification)
+│       └── domain.ts                   # cards, categories, merchants, expenses, etc.
 ├── hooks/
 │   ├── use-cards.ts
 │   ├── use-categories.ts
@@ -278,10 +287,8 @@ src/
 │   ├── use-occurrences.ts
 │   └── use-create-expense.ts
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts                   # createBrowserClient
-│   │   ├── server.ts                   # createServerClient (cookies)
-│   │   └── middleware.ts               # session refresh
+│   ├── auth.ts                         # Better Auth server instance + jwt plugin
+│   ├── auth-client.ts                  # createAuthClient + jwt client
 │   ├── finance/
 │   │   ├── types.ts
 │   │   ├── date.ts
@@ -301,78 +308,80 @@ src/
 │   └── query-keys.ts
 ├── providers/
 │   └── query-provider.tsx
-├── middleware.ts                        # protects (app)/*
+├── proxy.ts                            # Next.js 16 proxy: protects (app)/* via getSessionCookie
 └── tests/
     ├── invoice.test.ts
     ├── installments.test.ts
     ├── recurrence.test.ts
     └── parser.test.ts
-supabase/migrations/0001_init.sql
+drizzle.config.ts
+drizzle/                                # generated migrations
 ```
 
-## 5. Data model (migration SQL)
+## 5. Data model (PostgreSQL + Drizzle ORM)
 
 Mandatory separation: **purchase (`expenses`) ≠ financial occurrence
 (`expense_installments`)**. All UI and all reports read occurrences.
 
-Tables: `profiles`, `cards`, `categories`, `merchants`, `recurrences`,
-`expenses`, `installment_plans`, `expense_installments`.
+Tables:
+- Auth tables (managed by Better Auth): `user`, `session`, `account`, `verification`.
+- Domain tables: `cards`, `categories`, `merchants`, `recurrences`, `expenses`, `installment_plans`, `expense_installments`.
 
-```sql
-create type expense_type as enum ('single','installment','recurring');
-create type expense_status as enum ('pending','paid','cancelled');
-create type frequency as enum ('weekly','monthly','yearly');
+### Drizzle ORM Schema & Multi-Tenancy
 
-create table public.cards (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  name text not null,
-  closing_day int not null check (closing_day between 1 and 31),
-  due_day int not null check (due_day between 1 and 31),
-  credit_limit numeric(12,2),
-  color text,
-  active boolean not null default true,
-  created_at timestamptz not null default now()
-);
+Every domain table includes `user_id text not null references user(id) on delete cascade` and `deleted_at timestamp with time zone` (nullable) for soft deletes.
 
-grant select, insert, update, delete on public.cards to authenticated;
-grant all on public.cards to service_role;
-alter table public.cards enable row level security;
-
-create policy "select own cards" on public.cards for select
-  to authenticated using ( (select auth.uid()) = user_id );
-create policy "insert own cards" on public.cards for insert
-  to authenticated with check ( (select auth.uid()) = user_id );
-create policy "update own cards" on public.cards for update
-  to authenticated using ( (select auth.uid()) = user_id ) with check ( (select auth.uid()) = user_id );
-create policy "delete own cards" on public.cards for delete
-  to authenticated using ( (select auth.uid()) = user_id );
+Multi-tenant security is enforced at the query level in all API route handlers and server actions:
+```ts
+.where(and(eq(table.userId, session.user.id), isNull(table.deletedAt)))
 ```
 
-Repeat the **CREATE TABLE → GRANT → ENABLE RLS → per-command POLICY**
-block for every table. Per-command policies (rather than a single
-`for all`) are used so `select`/`insert` don't need a redundant
-`with check`, per Supabase RLS best practice — every policy still
-combines `TO authenticated` with an `auth.uid()` ownership predicate
-(never `auth.role()`), and every `update` policy carries both `using`
-and `with check` so a row's `user_id` can't be reassigned.
+Enums:
+- `expense_type`: `'single'`, `'installment'`, `'recurring'`
+- `expense_status`: `'pending'`, `'paid'`, `'cancelled'`
+- `frequency`: `'weekly'`, `'monthly'`, `'yearly'`
+
+Example Drizzle Table Definition:
+
+```ts
+export const cards = pgTable(
+    'cards',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+        name: text('name').notNull(),
+        closingDay: integer('closing_day').notNull(),
+        dueDay: integer('due_day').notNull(),
+        creditLimit: numeric('credit_limit', { precision: 12, scale: 2 }),
+        color: text('color'),
+        active: boolean('active').default(true).notNull(),
+        deletedAt: timestamp('deleted_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().$onUpdate(() => new Date()).notNull(),
+    },
+    (table) => [index('cards_user_idx').on(table.userId)],
+)
+```
 
 Important details:
 - `expense_installments`: `expense_id`, `installment_plan_id`,
   `recurrence_id`, `merchant_id`, `category_id`, `card_id`,
   `description`, `installment_number`, `installments_total`, `amount`,
-  `occurrence_date`, `due_date`, `invoice_month` (`YYYY-MM`), `status`.
-- Indexes: `(user_id, occurrence_date)`, `(user_id, status, due_date)`,
+  `occurrence_date`, `due_date`, `invoice_month` (`YYYY-MM`), `status`,
+  `deleted_at`.
+- Composite Indexes: `(user_id, occurrence_date)`, `(user_id, status, due_date)`,
   `(user_id, invoice_month)`.
-- Unique index to prevent duplicate categories:
-  `create unique index categories_user_name_unique on public.categories (user_id, lower(name));`
-- `updated_at` trigger on `expenses` and `cards`.
+- Unique partial index to prevent duplicate active categories per user:
+  `uniqueIndex('categories_user_name_unique').on(table.userId, sql`lower(${table.name})`).where(sql`${table.deletedAt} is null`)`
+- Unique partial index on merchants:
+  `uniqueIndex('merchants_user_normalized_unique').on(table.userId, table.normalizedName).where(sql`${table.deletedAt} is null`)`
 - `merchants`: `normalized_name` unique per user, `default_category_id`,
   `default_card_id`, `usage_count` (smart history).
+- Migration management: `drizzle-kit generate` to generate SQL migrations, `drizzle-kit migrate` or `drizzle-kit push` for applying schema changes.
 
 ## 6. Pure domain layer (no DB dependency)
 
-`src/lib/finance/*` never imports Supabase. Pure, 100% testable functions.
+`src/lib/finance/*` never imports Drizzle, PostgreSQL, or Better Auth. Pure, 100% testable functions.
 
 ### Invoice
 
@@ -443,23 +452,52 @@ Recognized tokens are stripped from the description. Returns a
 `ParsedExpense` with an `ambiguous` flag when amount is missing or
 there's a conflict → UI asks for confirmation.
 
-## 7. Supabase — clients and route guard
+## 7. Better Auth — configuration, JWT plugin, and route guard
 
-`src/lib/supabase/server.ts` (`createServerClient` from
-`@supabase/ssr` with `cookies()`), `client.ts` (`createBrowserClient`),
-and `middleware.ts` that refreshes the session.
+Better Auth provides email/password authentication using the JWT plugin with stateless signed cookies (`session_data`), eliminating per-request database hits.
+
+- Server: `src/lib/auth.ts` (`betterAuth` with `drizzleAdapter(db, { provider: 'pg', schema })`, `emailAndPassword`, and `jwt({ sessionCookieCache: true })`).
+- Client: `src/lib/auth-client.ts` (`createAuthClient` with `jwtClient()`).
+- Handler: `src/app/api/auth/[...all]/route.ts` exposes all Better Auth endpoints (`toNextJsHandler(auth.handler)`).
+
+Route guard proxy (Next.js 16 convention):
 
 ```ts
-// src/middleware.ts
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|webp)$).*)'] }
+// proxy.ts
+import { NextResponse, type NextRequest } from 'next/server'
+import { getSessionCookie } from 'better-auth/cookies'
+
+const protectedPrefixes = ['/inicio', '/mes', '/relatorios', '/ajustes']
+const authPrefixes = ['/login', '/cadastro']
+
+export function proxy(request: NextRequest) {
+    const { pathname } = request.nextUrl
+    const sessionCookie = getSessionCookie(request)
+
+    const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p))
+    if (isProtected && !sessionCookie) {
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    const isAuth = authPrefixes.some((p) => pathname.startsWith(p))
+    if (isAuth && sessionCookie) {
+        return NextResponse.redirect(new URL('/inicio', request.url))
+    }
+
+    return NextResponse.next()
+}
+
+export const config = {
+    matcher: ['/inicio/:path*', '/mes/:path*', '/relatorios/:path*', '/ajustes/:path*', '/login', '/cadastro'],
+}
 ```
 
 `src/app/(app)/layout.tsx` is a Server Component: calls
-`supabase.auth.getUser()` and `redirect('/login')` when there is no user.
+`auth.api.getSession({ headers: await headers() })` and `redirect('/login')` when there is no user.
 
 > ⚠️ The route guard only protects the UI. **Every route under
-> `app/api/*` revalidates the session** with `supabase.auth.getUser()`
-> and trusts RLS — never a client-supplied `user_id`.
+> `app/api/*` revalidates the session** with `auth.api.getSession({ headers: await headers() })`
+> and explicitly filters by `userId` and `isNull(deletedAt)` — never trust a client-supplied `userId`.
 
 ## 8. API routes — contract
 
@@ -468,20 +506,21 @@ Every handler follows: authenticate → validate with zod → execute → respon
 ```ts
 // src/app/api/expenses/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 import { createExpenseSchema } from '@/lib/schemas/expense-schema'
+import { createExpenseWithOccurrences } from '@/app/api/expenses/route'
 
 export async function POST(request: Request) {
-    const supabase = await createClient()
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const parsed = createExpenseSchema.safeParse(await request.json())
     if (!parsed.success) {
         return NextResponse.json({ error: 'Dados inválidos', issues: parsed.error.flatten() }, { status: 422 })
     }
 
-    const result = await createExpenseWithOccurrences(supabase, auth.user.id, parsed.data)
+    const result = await createExpenseWithOccurrences(session.user.id, parsed.data)
     return NextResponse.json(result, { status: 201 })
 }
 ```
@@ -544,8 +583,8 @@ const form = useForm<CreateExpenseInput>({
 
 Minimum 8 characters, lowercase, uppercase, number, symbol. Render a
 **live checklist** with ✓/✗ per requirement, validate on `blur` and on
-submit, and translate Supabase's error (`weak password`, `pwned`) to
-Portuguese explaining why. Never show just "weak password".
+submit, and translate authentication errors (such as email already registered, invalid credentials) to
+Portuguese explaining why. Never show unhandled raw error strings.
 
 ## 10. React Query
 

@@ -2,11 +2,11 @@
 
 > Part of the full plan. Master checklist and progress tracking: `../2026-09-09-bolso-mvp-implementation.md`. Shared context below is duplicated from that file so this section can be worked on standalone.
 
-**Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js + Supabase.
+**Goal:** Build the Bolso MVP — a mobile-first personal finance manager where a user registers an expense in under 15 seconds via a deterministic natural-language parser, backed by Next.js + PostgreSQL + Drizzle ORM + Better Auth (JWT).
 
-**Architecture:** Next.js App Router with Server Components by default; Supabase for Postgres+Auth with per-user RLS; a DB-free pure domain layer (`src/lib/finance/`) handling invoice/installment/recurrence/parser math, unit-tested with vitest; thin API routes (`auth → zod → execute → JSON`) that call the domain layer and Supabase; React Query on the client for cache/mutations; shadcn/ui + tailwind-variants for components.
+**Architecture:** Next.js App Router with Server Components by default; PostgreSQL via Drizzle ORM; Better Auth (JWT plugin with signed stateless cookies) for authentication; a DB-free pure domain layer (`src/lib/finance/`) handling invoice/installment/recurrence/parser math, unit-tested with vitest; thin API routes (`auth → zod → execute → JSON`) that call the domain layer and Drizzle ORM; React Query on the client for cache/mutations; shadcn/ui + tailwind-variants for components.
 
-**Tech Stack:** Next.js 15+ (TS strict), pnpm, shadcn/ui, Supabase (`@supabase/supabase-js`, `@supabase/ssr`), `@tanstack/react-query` v5, zod, react-hook-form, Tailwind v4, tailwind-variants, tailwind-merge, lucide-react, sonner, date-fns, vitest.
+**Tech Stack:** Next.js 16+ (TS strict), pnpm, shadcn/ui, PostgreSQL (`postgres` driver), Drizzle ORM (`drizzle-orm`, `drizzle-kit`), Better Auth (`better-auth` with JWT plugin, `@better-auth/cli`), `@tanstack/react-query` v5, zod, react-hook-form, Tailwind v4, tailwind-variants, tailwind-merge, lucide-react, sonner, date-fns, vitest.
 
 **Spec:** `docs/superpowers/specs/2026-09-09-bolso-mvp-design.md`
 
@@ -14,15 +14,15 @@
 
 - Files: lowercase-with-hyphens (`user-card.tsx`, `use-modal.ts`).
 - Always named exports, never `export default` — except `page.tsx`, `layout.tsx`, and `route.ts` handlers (`GET`/`POST`/`PATCH`/`DELETE`), which Next.js requires.
-- No barrel files (`index.ts`) for internal folders.
+- No barrel files (`index.ts`) for internal folders (except `src/db/schema/index.ts` for Drizzle schema re-exports).
 - Every UI component: `className={twMerge('base-classes', className)}`, `data-slot="<name>"` on the root element, state via `data-disabled={disabled ? '' : undefined}` (not boolean className logic), `{...props}` spread last, icon-only buttons need `aria-label`, icons use explicit `size-*` classes.
 - No hardcoded colors (`text-white`, `bg-[#hex]`) — only the tokens in `globals.css` (`bg-surface`, `text-foreground`, `border-border`, etc.).
 - TypeScript: never `React.FC`, never `any`; type-only imports (`import type { ComponentProps } from 'react'`); component props extend `ComponentProps<'tag'>` (+ `VariantProps<typeof xVariants>` when the component has variants).
-- Every API route under `src/app/api/*`: call `supabase.auth.getUser()` and return `401` if no user, `safeParse` the body with a zod schema and return `422` with `error.flatten()` on failure — never trust a client-supplied `user_id`.
+- Every API route under `src/app/api/*`: call `auth.api.getSession({ headers: await headers() })` and return `401` if no user, `safeParse` the body with a zod schema and return `422` with `error.flatten()` on failure — never trust a client-supplied `userId`. All DB queries must explicitly scope by user ID and `isNull(table.deletedAt)`.
 - `expense_installments` (occurrences) is what all UI/reports read — never `expenses` directly.
 - Installments anchor to **purchase month + i**, never to the due date. Recurrence compares **calendar dates** (`toISODate`), inclusive of the start day.
 - Google OAuth is out of scope — email/password only.
-- End of every task below: if it's the first task to create a structurally complex folder (`src/lib/finance/`, `src/lib/supabase/`, `src/lib/schemas/`, `src/app/api/`), add a short `CLAUDE.md` in that folder stating its purpose/patterns. Always also refresh the root `CLAUDE.md` with what that task added to the project structure.
+- End of every task below: if it's the first task to create a structurally complex folder (`src/lib/finance/`, `src/db/`, `src/lib/auth/`, `src/lib/schemas/`, `src/app/api/`), add a short `CLAUDE.md` in that folder stating its purpose/patterns. Always also refresh the root `CLAUDE.md` with what that task added to the project structure.
 
 ---
 
@@ -116,9 +116,10 @@ Re-read the full `src/` tree (`find src -type f | sort`) and update the "Structu
 pnpm typecheck
 pnpm test
 pnpm lint
+pnpm drizzle-kit check
 ```
 
-Expected: all three clean. Fix any failures before proceeding — do not skip or suppress.
+Expected: all clean. Fix any failures before proceeding — do not skip or suppress.
 
 - [ ] **Step 5: Full manual walkthrough**
 

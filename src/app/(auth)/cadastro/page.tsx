@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { authClient } from '@/lib/auth-client'
 import { signUpSchema, type SignUpInput } from '@/lib/schemas/auth-schema'
 import { PasswordChecklist } from '@/components/app/password-checklist'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ export default function CadastroPage() {
     } = useForm<SignUpInput>({
         resolver: zodResolver(signUpSchema),
         defaultValues: {
+            name: '',
             email: '',
             password: '',
         },
@@ -31,26 +32,19 @@ export default function CadastroPage() {
     const password = useWatch({ control, name: 'password', defaultValue: '' })
 
     const onSubmit = async (data: SignUpInput) => {
-        const supabase = createClient()
-        const { error } = await supabase.auth.signUp({
+        const { error } = await authClient.signUp.email({
+            name: data.name,
             email: data.email,
             password: data.password,
         })
 
         if (error) {
-            const msg = error.message.toLowerCase()
-            if (msg.includes('password should be at least') || msg.includes('weak password')) {
-                toast.error('A senha não atende aos requisitos mínimos')
-            } else if (msg.includes('already registered') || msg.includes('already in use')) {
-                toast.error('Este e-mail já está cadastrado')
-            } else {
-                toast.error(error.message || 'Erro ao criar conta')
-            }
+            toast.error(error.message || 'Erro ao criar conta')
             return
         }
 
-        toast.success('Conta criada! Verifique seu e-mail.')
-        router.push('/login')
+        toast.success('Conta criada com sucesso!')
+        router.push('/inicio')
     }
 
     return (
@@ -58,10 +52,25 @@ export default function CadastroPage() {
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle>Criar conta</CardTitle>
-                    <CardDescription>Cadastre-se para começar a controlar seus gastos no Bolso</CardDescription>
+                    <CardDescription>Cadastre-se para começar a controlar seus gastos no Contai</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="name">Nome completo</Label>
+                            <Input
+                                id="name"
+                                type="text"
+                                placeholder="Seu nome"
+                                autoComplete="name"
+                                aria-invalid={errors.name ? 'true' : undefined}
+                                {...register('name')}
+                            />
+                            {errors.name?.message ? (
+                                <p className="text-xs text-destructive">{errors.name.message}</p>
+                            ) : null}
+                        </div>
+
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="email">E-mail</Label>
                             <Input
