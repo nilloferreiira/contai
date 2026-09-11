@@ -23,6 +23,7 @@ JWT plugin, email/password only — no Google OAuth in MVP).
 - `src/tests/` — vitest unit tests for the domain layer
 - `src/db/` — Drizzle ORM client, schema, and migrations
 - `drizzle.config.ts` — Drizzle Kit configuration
+- `scripts/` — standalone dev scripts (e.g. `db:seed`), see `scripts/CLAUDE.md`
 
 ## Conventions
 

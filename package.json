@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:push": "drizzle-kit push --force"
+    "db:push": "drizzle-kit push --force",
+    "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -49,6 +51,7 @@
     "eslint-plugin-import": "^2.32.0",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^5.0.0"
   },
