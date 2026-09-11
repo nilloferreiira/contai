@@ -359,6 +359,7 @@ export const installmentPlansRelations = relations(installmentPlans, ({ one, man
 }))
 
 export const expenseInstallmentsRelations = relations(expenseInstallments, ({ one }) => ({
+    user: one(user, { fields: [expenseInstallments.userId], references: [user.id] }),
     expense: one(expenses, { fields: [expenseInstallments.expenseId], references: [expenses.id] }),
     installmentPlan: one(installmentPlans, {
         fields: [expenseInstallments.installmentPlanId],
