@@ -501,6 +501,11 @@ export const config = {
 
 ## 8. API routes — contract
 
+> **Superseded:** this REST contract is replaced by the tRPC design in
+> `docs/superpowers/specs/2026-09-11-monorepo-trpc-migration-design.md`.
+> Kept below for historical reference only — the actual task breakdown is
+> `docs/superpowers/plans/2026-09-09-bolso-mvp-implementation/section-e-api-trpc.md`.
+
 Every handler follows: authenticate → validate with zod → execute → respond JSON.
 
 ```ts
