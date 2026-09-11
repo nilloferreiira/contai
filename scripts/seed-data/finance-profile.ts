@@ -51,7 +51,7 @@ export interface SeedRecurrence {
 export const seedCards: SeedCard[] = [
     { key: 'inter', name: 'Inter', closingDay: 5, dueDay: 10, creditLimit: '2000.00', color: 'oklch(0.65 0.21 38)' },
     { key: 'picpay', name: 'Picpay', closingDay: 5, dueDay: 10, creditLimit: '2000.00', color: 'oklch(0.58 0.16 150)' },
-    { key: 'nubank', name: 'Nubank', closingDay: 5, dueDay: 10, creditLimit: null, color: 'oklch(0.5 0.24 300)' },
+    { key: 'nubank', name: 'Nubank', closingDay: 5, dueDay: 10, creditLimit: '1300.00', color: 'oklch(0.5 0.24 300)' },
 ]
 
 export const seedCategories: SeedCategory[] = [
