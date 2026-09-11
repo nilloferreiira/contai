@@ -134,12 +134,20 @@ function escapeRegExp(value: string): string {
 
 const CONNECTOR_WORDS = new Set(['na', 'no', 'em', 'de', 'do', 'da'])
 
+// Strips connector words only from the leading/trailing edges of the
+// remainder (leftover words like "na"/"no" from "na americanas no nubank"
+// after the card token is removed) — never from the middle, so a real
+// merchant name that legitimately contains one of these words internally
+// (e.g. "Casa do Pão", "Casa de Carnes") is left intact.
 function stripConnectorWords(input: string): string {
-    return input
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0 && !CONNECTOR_WORDS.has(word.toLowerCase()))
-        .join(' ')
+    const words = input.trim().split(/\s+/).filter((word) => word.length > 0)
+
+    let start = 0
+    let end = words.length
+    while (start < end && CONNECTOR_WORDS.has(words[start].toLowerCase())) start++
+    while (end > start && CONNECTOR_WORDS.has(words[end - 1].toLowerCase())) end--
+
+    return words.slice(start, end).join(' ')
 }
 
 export function parseExpenseInput(input: string, context: ParserContext, today: Date): ParsedExpense {
