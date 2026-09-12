@@ -1,6 +1,8 @@
 # packages/db (`@contai/db`)
 
 Drizzle ORM setup backed by PostgreSQL via `postgres.js`:
+- `env.ts` — zod-validated `process.env` (`DATABASE_URL`, `NODE_ENV`);
+  import `{ env }` from here instead of reading `process.env` directly.
 - `index.ts` — exports the singleton `db` instance (cached on `globalThis`
   in development to avoid connection-multiplication on hot reload) and
   re-exports every table/relation from `schema/`.

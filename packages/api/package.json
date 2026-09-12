@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@contai/db": "workspace:*",
-    "better-auth": "^1.7.3"
+    "better-auth": "^1.7.3",
+    "zod": "^4"
   },
   "devDependencies": {
     "@types/node": "^20",

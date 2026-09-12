@@ -1,18 +1,17 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
+import { env } from './env'
 
 declare global {
     var __contaiDb: ReturnType<typeof drizzle<typeof schema>> | undefined
 }
 
-const connectionString = process.env.DATABASE_URL!
-
 export const db =
     globalThis.__contaiDb ??
-    drizzle(postgres(connectionString), { schema })
+    drizzle(postgres(env.DATABASE_URL), { schema })
 
-if (process.env.NODE_ENV !== 'production') {
+if (env.NODE_ENV !== 'production') {
     globalThis.__contaiDb = db
 }
 

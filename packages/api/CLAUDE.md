@@ -11,6 +11,10 @@ by a future RN client (`import type { AppRouter }`) — type-only imports
 are erased at compile time, so Metro never resolves `@contai/db`'s Node
 builtins transitively.
 
+- `env.ts` — zod-validated `process.env` (`BETTER_AUTH_SECRET`,
+  `BETTER_AUTH_URL`); import `{ env }` from here instead of reading
+  `process.env` directly.
 - `auth.ts` — `betterAuth()` server instance (email/password, JWT plugin),
-  backed by `@contai/db`.
+  backed by `@contai/db`; passes `secret`/`baseURL` explicitly from `env.ts`
+  rather than relying on `better-auth`'s implicit env auto-detection.
 - `index.ts` — public entry point: re-exports `auth` and its `Session` type.
