@@ -1,5 +1,15 @@
 # Bolso MVP Implementation Plan — Section E: API + hooks (tRPC)
 
+> **Superseded:** split into
+> [`section-e1-api-trpc.md`](./section-e1-api-trpc.md) (backend: `packages/api` tRPC
+> infra, a services layer, and thin routers) and
+> [`section-e2-web-hooks.md`](./section-e2-web-hooks.md) (frontend: `apps/web` tRPC
+> client wiring and React Query hooks), per the confirmed decision to separate the
+> tRPC-protocol concern from DB/domain orchestration (now in `packages/api/src/services/`,
+> framework-agnostic so it survives a future move off tRPC to a dedicated API) and from
+> the client-hook concern. Kept below for historical reference — this file's inline
+> business-logic-inside-the-procedure approach was planned but never built.
+
 > Part of the full plan. Master checklist and progress tracking: `../2026-09-09-bolso-mvp-implementation.md`. Shared context below is duplicated from that file so this section can be worked on standalone. Supersedes `section-e-api-hooks.md` (REST version, never built) per `docs/superpowers/specs/2026-09-11-monorepo-trpc-migration-design.md`.
 
 **Goal:** Build the Bolso MVP's API layer as tRPC procedures — `packages/api`'s router is the single source of truth for cards/categories/merchants/expenses/occurrences/reports, consumed by Server Components via a server-side caller and by Client Components via `@trpc/tanstack-react-query` hooks over the existing `@tanstack/react-query` v5 client.
