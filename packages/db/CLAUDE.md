@@ -11,7 +11,12 @@ All database queries must go through Drizzle ORM using `db.select()`, `db.insert
 `db.update()`. Never run untracked raw SQL. Every user-owned entity must be
 filtered by `userId` and `isNull(deletedAt)`.
 
-**Deploy path:** From the repo root, `pnpm db:push` runs
-`pnpm --filter @contai/db exec drizzle-kit push --force` to apply schema
-changes to the database. Migration files are generated for review and
-version control, but `drizzle-kit migrate` is not used in this project.
+**Deploy path:** From the repo root, `pnpm db:generate` runs
+`pnpm --filter @contai/db exec drizzle-kit generate` to diff `schema/`
+against the last migration and write a new SQL migration file under
+`migrations/` for review. `pnpm db:migrate` runs
+`pnpm --filter @contai/db exec drizzle-kit migrate` to apply any
+not-yet-applied migrations to the database, tracked in the
+`drizzle.__drizzle_migrations` table. Every schema change must go through
+a committed, reviewed migration file — `drizzle-kit push` is no longer
+used for deploys.

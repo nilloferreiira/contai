@@ -8,7 +8,8 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "db:push": "pnpm --filter @contai/db exec drizzle-kit push --force",
+    "db:generate": "pnpm --filter @contai/db exec drizzle-kit generate",
+    "db:migrate": "pnpm --filter @contai/db exec drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
