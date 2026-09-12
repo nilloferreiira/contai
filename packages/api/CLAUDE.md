@@ -1,20 +1,18 @@
-# packages/api (`@contai/api`)
+# packages/api
 
-Node-only runtime package. Today it only houses the Better Auth *server*
-instance (`auth.ts`) — the tRPC router layer described in
-`docs/superpowers/specs/2026-09-11-monorepo-trpc-migration-design.md` is
-planned but not yet built here; when it lands, its task breakdown is
-`docs/superpowers/plans/2026-09-09-bolso-mvp-implementation/section-e-api-trpc.md`.
+Better Auth server instance (`auth.ts`) + the tRPC API layer.
 
-Once the router exists, only its **type exports** should ever be imported
-by a future RN client (`import type { AppRouter }`) — type-only imports
-are erased at compile time, so Metro never resolves `@contai/db`'s Node
-builtins transitively.
+- `trpc.ts` — `initTRPC`, `protectedProcedure` (rejects unauthenticated requests),
+  `mapServiceError` (translates a thrown `ServiceError` into the matching `TRPCError`).
+- `context.ts` — `{ session, userId, db }` built from the Better Auth session + `@contai/db`.
+- `services/<resource>-service.ts` — all DB + business-rule orchestration. Zero
+  dependency on `@trpc/*`: plain functions `(db, userId, ...args) => Promise<T>`, zod
+  input schemas exported alongside. Throws `ServiceError` for not-found/conflict/
+  invalid-scope; never throws `TRPCError`. This is the layer a future dedicated API
+  would reuse as-is.
+- `routers/<resource>.ts` — thin tRPC wrappers: `.input(schema)` from the matching
+  service, one line calling the service function, `.catch(mapServiceError)` where the
+  service can throw. No DB queries or business logic here.
+- `routers/_app.ts` — merges every resource router into `appRouter`.
 
-- `env.ts` — zod-validated `process.env` (`BETTER_AUTH_SECRET`,
-  `BETTER_AUTH_URL`); import `{ env }` from here instead of reading
-  `process.env` directly.
-- `auth.ts` — `betterAuth()` server instance (email/password, JWT plugin),
-  backed by `@contai/db`; passes `secret`/`baseURL` explicitly from `env.ts`
-  rather than relying on `better-auth`'s implicit env auto-detection.
-- `index.ts` — public entry point: re-exports `auth` and its `Session` type.
+A future RN client should only ever import `AppRouter`'s **type** (`import type { AppRouter }`) — type-only imports are erased at compile time and prevent Metro from resolving `@contai/db`'s Node builtins transitively.
