@@ -12,6 +12,7 @@
     "better-auth": "^1.7.3"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "typescript": "^5"
   }
 }
