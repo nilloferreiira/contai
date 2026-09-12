@@ -1,0 +1,8 @@
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@contai/api";
+
+export default async function Home() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  redirect(session?.user ? "/inicio" : "/login");
+}

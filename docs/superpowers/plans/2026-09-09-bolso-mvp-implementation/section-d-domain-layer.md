@@ -42,7 +42,7 @@
 - Consumes: nothing
 - Produces: `toISODate(date: Date): string`, `monthKey(date: Date): string`, `clampDay(monthStart: Date, day: number): Date`, `formatBRL(amountInReais: number): string` — used by every domain function in Tasks 11-17.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/date.test.ts
@@ -90,7 +90,7 @@ describe('formatBRL', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm both fail**
+- [x] **Step 2: Run and confirm both fail**
 
 ```bash
 pnpm test src/tests/date.test.ts src/tests/money.test.ts
@@ -98,7 +98,7 @@ pnpm test src/tests/date.test.ts src/tests/money.test.ts
 
 Expected: FAIL — modules don't exist yet.
 
-- [ ] **Step 3: Implement `date.ts`**
+- [x] **Step 3: Implement `date.ts`**
 
 ```ts
 // src/lib/finance/date.ts
@@ -124,7 +124,7 @@ export function clampDay(monthStart: Date, day: number): Date {
 }
 ```
 
-- [ ] **Step 4: Implement `money.ts`**
+- [x] **Step 4: Implement `money.ts`**
 
 ```ts
 // src/lib/finance/money.ts
@@ -134,7 +134,7 @@ export function formatBRL(amountInReais: number): string {
 }
 ```
 
-- [ ] **Step 5: Run and confirm both pass**
+- [x] **Step 5: Run and confirm both pass**
 
 ```bash
 pnpm test src/tests/date.test.ts src/tests/money.test.ts
@@ -142,7 +142,7 @@ pnpm test src/tests/date.test.ts src/tests/money.test.ts
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 6: Write `src/lib/finance/CLAUDE.md`**
+- [x] **Step 6: Write `src/lib/finance/CLAUDE.md`**
 
 ```markdown
 # src/lib/finance
@@ -161,7 +161,7 @@ plain input→output transformation, unit-tested in `src/tests/`.
 - `dashboard.ts` — read-side aggregations over occurrences.
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/lib/finance/date.ts src/lib/finance/money.ts src/lib/finance/CLAUDE.md src/tests/date.test.ts src/tests/money.test.ts
@@ -180,7 +180,7 @@ git commit -m "feat: add date and money domain primitives"
 - Consumes: `toISODate`, `monthKey`, `clampDay` from `date.ts` (Task 10)
 - Produces: `CardCycle` type and `getInvoiceForExpense(purchaseDate: Date, card: CardCycle | null): { month: string; dueDate: Date }` — consumed by Task 12 (installments) and Task 22 (`/api/expenses`).
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/invoice.test.ts
@@ -217,7 +217,7 @@ describe('getInvoiceForExpense', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm it fails**
+- [x] **Step 2: Run and confirm it fails**
 
 ```bash
 pnpm test src/tests/invoice.test.ts
@@ -225,7 +225,7 @@ pnpm test src/tests/invoice.test.ts
 
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement `invoice.ts`**
+- [x] **Step 3: Implement `invoice.ts`**
 
 ```ts
 // src/lib/finance/invoice.ts
@@ -249,7 +249,7 @@ export function getInvoiceForExpense(purchaseDate: Date, card: CardCycle | null)
 }
 ```
 
-- [ ] **Step 4: Run and confirm it passes**
+- [x] **Step 4: Run and confirm it passes**
 
 ```bash
 pnpm test src/tests/invoice.test.ts
@@ -257,7 +257,7 @@ pnpm test src/tests/invoice.test.ts
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/invoice.ts src/tests/invoice.test.ts
@@ -276,7 +276,7 @@ git commit -m "feat: add invoice closing/due date calculation"
 - Consumes: `getInvoiceForExpense`, `CardCycle` from `invoice.ts` (Task 11); `toISODate` from `date.ts` (Task 10)
 - Produces: `generateInstallments(total: number, count: number, purchaseDate: Date, card: CardCycle | null): InstallmentOccurrence[]` where `InstallmentOccurrence = { installment_number: number; installments_total: number; amount: number; occurrence_date: string; due_date: string; invoice_month: string }` — consumed by Task 22 (`/api/expenses`).
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/installments.test.ts
@@ -308,13 +308,13 @@ describe('generateInstallments', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm it fails**
+- [x] **Step 2: Run and confirm it fails**
 
 ```bash
 pnpm test src/tests/installments.test.ts
 ```
 
-- [ ] **Step 3: Implement `installments.ts`**
+- [x] **Step 3: Implement `installments.ts`**
 
 ```ts
 // src/lib/finance/installments.ts
@@ -356,7 +356,7 @@ export function generateInstallments(
 }
 ```
 
-- [ ] **Step 4: Run and confirm it passes**
+- [x] **Step 4: Run and confirm it passes**
 
 ```bash
 pnpm test src/tests/installments.test.ts
@@ -364,7 +364,7 @@ pnpm test src/tests/installments.test.ts
 
 Expected: PASS, 3 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/installments.ts src/tests/installments.test.ts
@@ -383,7 +383,7 @@ git commit -m "feat: add installment splitting with purchase-month anchoring"
 - Consumes: `toISODate` from `date.ts` (Task 10)
 - Produces: `generateRecurrenceOccurrences(startDate: Date, frequency: 'weekly' | 'monthly' | 'yearly', untilDate: Date, endDate?: Date | null): string[]` (ISO date strings) — consumed by Task 22 (`/api/expenses`, recurring branch).
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/recurrence.test.ts
@@ -413,13 +413,13 @@ describe('generateRecurrenceOccurrences', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm it fails**
+- [x] **Step 2: Run and confirm it fails**
 
 ```bash
 pnpm test src/tests/recurrence.test.ts
 ```
 
-- [ ] **Step 3: Implement `recurrence.ts`**
+- [x] **Step 3: Implement `recurrence.ts`**
 
 ```ts
 // src/lib/finance/recurrence.ts
@@ -452,7 +452,7 @@ function advance(date: Date, frequency: Frequency): Date {
 }
 ```
 
-- [ ] **Step 4: Run and confirm it passes**
+- [x] **Step 4: Run and confirm it passes**
 
 ```bash
 pnpm test src/tests/recurrence.test.ts
@@ -460,7 +460,7 @@ pnpm test src/tests/recurrence.test.ts
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/recurrence.ts src/tests/recurrence.test.ts
@@ -479,7 +479,7 @@ git commit -m "feat: add recurrence occurrence generation"
 - Consumes: nothing
 - Produces: `normalizeMerchantName(raw: string): string` — consumed by Task 16 (parser part 2) and Task 20 (`/api/categories` seed) and Task 22 (`/api/expenses` merchant upsert).
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/merchants.test.ts
@@ -502,13 +502,13 @@ describe('normalizeMerchantName', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm it fails**
+- [x] **Step 2: Run and confirm it fails**
 
 ```bash
 pnpm test src/tests/merchants.test.ts
 ```
 
-- [ ] **Step 3: Implement `merchants.ts`**
+- [x] **Step 3: Implement `merchants.ts`**
 
 ```ts
 // src/lib/finance/merchants.ts
@@ -524,7 +524,7 @@ export function normalizeMerchantName(raw: string): string {
 }
 ```
 
-- [ ] **Step 4: Run and confirm it passes**
+- [x] **Step 4: Run and confirm it passes**
 
 ```bash
 pnpm test src/tests/merchants.test.ts
@@ -532,7 +532,7 @@ pnpm test src/tests/merchants.test.ts
 
 Expected: PASS, 3 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/merchants.ts src/tests/merchants.test.ts
@@ -551,7 +551,7 @@ git commit -m "feat: add merchant name normalization"
 - Consumes: nothing yet (card/category/merchant matching comes in Task 16)
 - Produces: `parseAmount(input: string): { value: number; remainder: string } | null`, `parseInstallmentCount(input: string): { count: number; remainder: string } | null`, `parseRecurrenceFrequency(input: string): { frequency: 'weekly' | 'monthly' | 'yearly'; remainder: string } | null`, `parseExplicitDate(input: string, today: Date): { date: Date; remainder: string } | null` — Task 16 imports all four and composes them into `parseExpenseInput`.
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/parser.test.ts
@@ -630,13 +630,13 @@ describe('parseExplicitDate', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm it fails**
+- [x] **Step 2: Run and confirm it fails**
 
 ```bash
 pnpm test src/tests/parser.test.ts
 ```
 
-- [ ] **Step 3: Implement part 1 of `parser.ts`**
+- [x] **Step 3: Implement part 1 of `parser.ts`**
 
 ```ts
 // src/lib/finance/parser.ts
@@ -712,7 +712,7 @@ export function parseExplicitDate(input: string, today: Date): { date: Date; rem
 }
 ```
 
-- [ ] **Step 4: Run and confirm it passes**
+- [x] **Step 4: Run and confirm it passes**
 
 ```bash
 pnpm test src/tests/parser.test.ts
@@ -720,7 +720,7 @@ pnpm test src/tests/parser.test.ts
 
 Expected: PASS, 15 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/parser.ts src/tests/parser.test.ts
@@ -739,7 +739,7 @@ git commit -m "feat: add parser primitives for amount, installments, recurrence,
 - Consumes: `parseAmount`, `parseInstallmentCount`, `parseRecurrenceFrequency`, `parseExplicitDate` (Task 15); `normalizeMerchantName` (Task 14)
 - Produces: `ParsedExpense` type and `parseExpenseInput(input: string, context: ParserContext, today: Date): ParsedExpense`, where `ParserContext = { cards: { id: string; name: string }[]; categories: { id: string; name: string }[]; merchants: { id: string; normalized_name: string; display_name: string; default_category_id: string | null; default_card_id: string | null }[] }` — consumed by Task 26 (`quick-add.tsx`).
 
-- [ ] **Step 1: Add failing tests to `parser.test.ts`**
+- [x] **Step 1: Add failing tests to `parser.test.ts`**
 
 ```ts
 // append to src/tests/parser.test.ts
@@ -793,13 +793,13 @@ describe('parseExpenseInput', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm the new tests fail**
+- [x] **Step 2: Run and confirm the new tests fail**
 
 ```bash
 pnpm test src/tests/parser.test.ts
 ```
 
-- [ ] **Step 3: Append part 2 to `parser.ts`**
+- [x] **Step 3: Append part 2 to `parser.ts`**
 
 ```ts
 // append to src/lib/finance/parser.ts
@@ -906,7 +906,7 @@ export function parseExpenseInput(input: string, context: ParserContext, today: 
 }
 ```
 
-- [ ] **Step 4: Run and confirm all parser tests pass**
+- [x] **Step 4: Run and confirm all parser tests pass**
 
 ```bash
 pnpm test src/tests/parser.test.ts
@@ -914,7 +914,7 @@ pnpm test src/tests/parser.test.ts
 
 Expected: PASS, 20 tests total.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/parser.ts src/tests/parser.test.ts
@@ -933,7 +933,7 @@ git commit -m "feat: add card/category/merchant matching to the expense parser"
 - Consumes: nothing (operates on plain occurrence objects)
 - Produces: `Occurrence` type, `summarizeMonth(occurrences: Occurrence[]): { total: number; byCategory: Record<string, number>; byCard: Record<string, number> }` — consumed by Task 24 (`/api/reports/summary`).
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 // src/tests/dashboard.test.ts
@@ -962,13 +962,13 @@ describe('summarizeMonth', () => {
 })
 ```
 
-- [ ] **Step 2: Run and confirm it fails**
+- [x] **Step 2: Run and confirm it fails**
 
 ```bash
 pnpm test src/tests/dashboard.test.ts
 ```
 
-- [ ] **Step 3: Implement `dashboard.ts`**
+- [x] **Step 3: Implement `dashboard.ts`**
 
 ```ts
 // src/lib/finance/dashboard.ts
@@ -1001,7 +1001,7 @@ export function summarizeMonth(occurrences: Occurrence[]) {
 }
 ```
 
-- [ ] **Step 4: Run and confirm it passes**
+- [x] **Step 4: Run and confirm it passes**
 
 ```bash
 pnpm test src/tests/dashboard.test.ts
@@ -1009,7 +1009,7 @@ pnpm test src/tests/dashboard.test.ts
 
 Expected: PASS, 3 tests.
 
-- [ ] **Step 5: Run the full domain test suite**
+- [x] **Step 5: Run the full domain test suite**
 
 ```bash
 pnpm test
@@ -1017,7 +1017,7 @@ pnpm test
 
 Expected: all domain tests pass (Tasks 10-17 combined, 40+ tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/lib/finance/dashboard.ts src/tests/dashboard.test.ts

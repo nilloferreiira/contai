@@ -35,12 +35,12 @@ Each row links to that section's full file (tasks, files, interfaces, step-by-st
   Dependencies (Drizzle, Better Auth, Postgres, Tailwind, shadcn), ESLint rules, root CLAUDE.md, shadcn/ui init + tokens/fonts, QueryProvider + Toaster, vitest setup.
 - [x] **Section B: PostgreSQL & Better Auth** (Tasks 5-8) — `2026-09-09-bolso-mvp-implementation/section-b-better-auth.md`
   PostgreSQL connection + Drizzle instance, Better Auth server + JWT plugin + client, Next.js 16 proxy optimistic guard, `/login` + `/cadastro`, authenticated route guard + bottom nav shell.
-- [ ] **Section C: Database** (Task 9) — `2026-09-09-bolso-mvp-implementation/section-c-database.md`
+- [x] **Section C: Database** (Task 9) — `2026-09-09-bolso-mvp-implementation/section-c-database.md`
   Drizzle ORM schema (`src/db/schema/*`), enums, relations, indexes, and Drizzle Kit migration workflow (`drizzle.config.ts`, `pnpm drizzle-kit push`/`generate`).
-- [ ] **Section D: Domain layer** (Tasks 10-17) — `2026-09-09-bolso-mvp-implementation/section-d-domain-layer.md`
+- [x] **Section D: Domain layer** (Tasks 10-17) — `2026-09-09-bolso-mvp-implementation/section-d-domain-layer.md`
   `src/lib/finance/`: date/money, invoice, installments, recurrence, merchants, parser (2 parts), dashboard — all pure, unit-tested.
-- [ ] **Section E: API + hooks** (Tasks 18-24) — `2026-09-09-bolso-mvp-implementation/section-e-api-hooks.md`
-  `api-client.ts`/`query-keys.ts`/zod schemas, `/api/cards`, `/api/categories`, `/api/merchants`, `/api/expenses`, `/api/occurrences`, `/api/reports/summary`, plus matching React Query hooks, backed by Drizzle ORM.
+- [ ] **Section E: API + hooks** (Tasks 18-24) — `2026-09-09-bolso-mvp-implementation/section-e-api-trpc.md`
+  `packages/api` tRPC infra (`trpc.ts`/`context.ts`/fetch adapter/RSC caller/client Provider), `cards`/`categories`/`merchants`/`expenses`/`occurrences`/`reports` routers as `protectedProcedure`s, plus matching React Query hooks via `@trpc/tanstack-react-query`, backed by Drizzle ORM. Supersedes the REST version at `section-e-api-hooks.md`.
 - [ ] **Section F: UI components** (Tasks 25-31) — `2026-09-09-bolso-mvp-implementation/section-f-ui-components.md`
   Card visual/colors, quick-add, manual expense dialog + form, occurrence list/row, occurrence sheet, summary tiles + month switcher, bottom-nav full wiring.
 - [ ] **Section G: Pages** (Tasks 32-35) — `2026-09-09-bolso-mvp-implementation/section-g-pages.md`
