@@ -4,9 +4,9 @@
 > in [`section-e1-api-trpc.md`](./section-e1-api-trpc.md) — same task numbers (18-24), so
 > "Task 19" here (cards hooks) pairs with "Task 19" there (cards service + router).
 >
-> Replaces the combined tRPC doc previously at `section-e-api-trpc.md` (now a superseded
-> stub) and, transitively, the REST version previously at `section-e-api-hooks.md`
-> (never built, now deleted — see git history).
+> Replaces the combined tRPC doc previously at `section-e-api-trpc.md` and,
+> transitively, the REST version previously at `section-e-api-hooks.md` — both
+> never built, both deleted (see git history).
 
 > Part of the full plan. Master checklist and progress tracking: `../2026-09-09-bolso-mvp-implementation.md`. Shared context below is duplicated from that file so this section can be worked on standalone.
 
