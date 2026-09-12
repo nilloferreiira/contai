@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { and, eq, isNull } from 'drizzle-orm'
-import { cards, expenseInstallments, expenses, installmentPlans, merchants, recurrences } from '@contai/db'
+import { cards, categories, expenseInstallments, expenses, installmentPlans, merchants, recurrences } from '@contai/db'
 import {
     generateInstallments,
     generateRecurrenceOccurrences,
@@ -9,6 +9,7 @@ import {
     toISODate,
     type CardCycle,
 } from '@contai/domain'
+import { ServiceError } from './errors'
 import type { Database } from './types'
 
 export const createExpenseInputSchema = z
@@ -38,6 +39,17 @@ export type CreateExpenseInput = z.infer<typeof createExpenseInputSchema>
 
 export async function createExpense(db: Database, userId: string, input: CreateExpenseInput) {
     return db.transaction(async (tx) => {
+        let categoryId: string | null = null
+        if (input.categoryId) {
+            const [categoryRow] = await tx
+                .select({ id: categories.id })
+                .from(categories)
+                .where(and(eq(categories.id, input.categoryId), eq(categories.userId, userId), isNull(categories.deletedAt)))
+                .limit(1)
+            if (!categoryRow) throw new ServiceError('NOT_FOUND', 'Categoria não encontrada')
+            categoryId = categoryRow.id
+        }
+
         let merchantId: string | null = null
         if (input.merchantName) {
             const normalized = normalizeMerchantName(input.merchantName)
@@ -60,7 +72,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                         userId,
                         normalizedName: normalized,
                         displayName: input.merchantName,
-                        defaultCategoryId: input.categoryId ?? null,
+                        defaultCategoryId: categoryId,
                         defaultCardId: input.cardId ?? null,
                         usageCount: 1,
                     })
@@ -76,7 +88,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 type: input.type,
                 description: input.description,
                 merchantId,
-                categoryId: input.categoryId ?? null,
+                categoryId,
                 cardId: input.cardId ?? null,
                 totalAmount: String(input.amount),
                 purchaseDate: toISODate(input.purchaseDate),
@@ -91,7 +103,8 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 .from(cards)
                 .where(and(eq(cards.id, input.cardId), eq(cards.userId, userId), isNull(cards.deletedAt)))
                 .limit(1)
-            card = cardRow ?? null
+            if (!cardRow) throw new ServiceError('NOT_FOUND', 'Cartão não encontrado')
+            card = cardRow
         }
 
         if (input.type === 'installment' && input.installments) {
@@ -109,7 +122,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                         expenseId: expense.id,
                         installmentPlanId: plan.id,
                         merchantId,
-                        categoryId: input.categoryId ?? null,
+                        categoryId,
                         cardId: input.cardId ?? null,
                         description: input.description,
                         installmentNumber: installment.installment_number,
@@ -156,7 +169,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                             expenseId: expense.id,
                             recurrenceId: recurrence.id,
                             merchantId,
-                            categoryId: input.categoryId ?? null,
+                            categoryId,
                             cardId: input.cardId ?? null,
                             description: input.description,
                             amount: String(input.amount),
@@ -178,7 +191,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 userId,
                 expenseId: expense.id,
                 merchantId,
-                categoryId: input.categoryId ?? null,
+                categoryId,
                 cardId: input.cardId ?? null,
                 description: input.description,
                 amount: String(input.amount),
