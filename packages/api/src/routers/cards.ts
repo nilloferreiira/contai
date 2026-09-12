@@ -15,5 +15,5 @@ export const cardsRouter = router({
 
     delete: protectedProcedure
         .input(z.object({ id: z.string().uuid() }))
-        .mutation(({ ctx, input }) => deleteCard(ctx.db, ctx.userId, input.id)),
+        .mutation(({ ctx, input }) => deleteCard(ctx.db, ctx.userId, input.id).catch(mapServiceError)),
 })

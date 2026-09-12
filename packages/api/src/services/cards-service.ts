@@ -59,9 +59,12 @@ export async function updateCard(db: Database, userId: string, id: string, input
 }
 
 export async function deleteCard(db: Database, userId: string, id: string) {
-    await db
+    const [data] = await db
         .update(cards)
         .set({ deletedAt: new Date() })
         .where(and(eq(cards.id, id), eq(cards.userId, userId), isNull(cards.deletedAt)))
+        .returning()
+
+    if (!data) throw new ServiceError('NOT_FOUND', 'Cartão não encontrado')
     return { ok: true }
 }
