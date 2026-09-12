@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { and, desc, eq, gte, ilike, isNull, lte } from 'drizzle-orm'
-import { expenseInstallments } from '@contai/db'
+import { cards, categories, expenseInstallments } from '@contai/db'
 import { ServiceError } from './errors'
 import type { Database } from './types'
 
@@ -75,6 +75,24 @@ async function findCurrent(db: Database, userId: string, id: string) {
 }
 
 export async function updateOccurrence(db: Database, userId: string, id: string, scope: Scope, patchInput: OccurrencePatch) {
+    if (patchInput.categoryId) {
+        const [categoryRow] = await db
+            .select({ id: categories.id })
+            .from(categories)
+            .where(and(eq(categories.id, patchInput.categoryId), eq(categories.userId, userId), isNull(categories.deletedAt)))
+            .limit(1)
+        if (!categoryRow) throw new ServiceError('NOT_FOUND', 'Categoria não encontrada')
+    }
+
+    if (patchInput.cardId) {
+        const [cardRow] = await db
+            .select({ id: cards.id })
+            .from(cards)
+            .where(and(eq(cards.id, patchInput.cardId), eq(cards.userId, userId), isNull(cards.deletedAt)))
+            .limit(1)
+        if (!cardRow) throw new ServiceError('NOT_FOUND', 'Cartão não encontrado')
+    }
+
     const patch: Partial<typeof expenseInstallments.$inferInsert> = {
         ...(patchInput.status && { status: patchInput.status }),
         ...(patchInput.amount && { amount: String(patchInput.amount) }),

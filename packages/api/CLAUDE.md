@@ -16,3 +16,5 @@ Better Auth server instance (`auth.ts`) + the tRPC API layer.
 - `routers/_app.ts` — merges every resource router into `appRouter`.
 
 A future RN client should only ever import `AppRouter`'s **type** (`import type { AppRouter }`) — type-only imports are erased at compile time and prevent Metro from resolving `@contai/db`'s Node builtins transitively.
+
+`trpc.ts` configures `transformer: superjson`. Any tRPC client (a future `apps/web` client link, or an RN client) MUST configure the matching `transformer: superjson`, or dates and other superjson-specific types will fail to (de)serialize correctly over HTTP.

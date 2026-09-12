@@ -19,7 +19,7 @@ export const createExpenseInputSchema = z
         merchantName: z.string().max(80).optional(),
         categoryId: z.string().uuid().nullable().optional(),
         cardId: z.string().uuid().nullable().optional(),
-        purchaseDate: z.coerce.date(),
+        purchaseDate: z.string().date(),
         type: z.enum(['single', 'installment', 'recurring']),
         installments: z.number().int().min(2).max(48).optional(),
         frequency: z.enum(['weekly', 'monthly', 'yearly']).optional(),
@@ -38,6 +38,8 @@ export const createExpenseInputSchema = z
 export type CreateExpenseInput = z.infer<typeof createExpenseInputSchema>
 
 export async function createExpense(db: Database, userId: string, input: CreateExpenseInput) {
+    const purchaseDate = new Date(input.purchaseDate)
+
     return db.transaction(async (tx) => {
         let categoryId: string | null = null
         if (input.categoryId) {
@@ -91,7 +93,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 categoryId,
                 cardId: input.cardId ?? null,
                 totalAmount: String(input.amount),
-                purchaseDate: toISODate(input.purchaseDate),
+                purchaseDate: toISODate(purchaseDate),
                 notes: input.notes ?? null,
             })
             .returning()
@@ -113,7 +115,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 .values({ expenseId: expense.id, userId, installmentsTotal: input.installments })
                 .returning()
 
-            const generatedInstallments = generateInstallments(input.amount, input.installments, input.purchaseDate, card)
+            const generatedInstallments = generateInstallments(input.amount, input.installments, purchaseDate, card)
             const occurrences = await tx
                 .insert(expenseInstallments)
                 .values(
@@ -144,15 +146,15 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 .values({
                     userId,
                     frequency: input.frequency,
-                    startDate: toISODate(input.purchaseDate),
+                    startDate: toISODate(purchaseDate),
                     endDate: input.endDate ?? null,
                 })
                 .returning()
 
-            const untilDate = new Date(input.purchaseDate)
+            const untilDate = new Date(purchaseDate)
             untilDate.setMonth(untilDate.getMonth() + 12)
             const dates = generateRecurrenceOccurrences(
-                input.purchaseDate,
+                purchaseDate,
                 input.frequency,
                 untilDate,
                 input.endDate ? new Date(input.endDate) : null,
@@ -184,7 +186,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
             return { expense, occurrences }
         }
 
-        const invoice = getInvoiceForExpense(input.purchaseDate, card)
+        const invoice = getInvoiceForExpense(purchaseDate, card)
         const [occurrence] = await tx
             .insert(expenseInstallments)
             .values({
@@ -195,7 +197,7 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 cardId: input.cardId ?? null,
                 description: input.description,
                 amount: String(input.amount),
-                occurrenceDate: toISODate(input.purchaseDate),
+                occurrenceDate: toISODate(purchaseDate),
                 dueDate: toISODate(invoice.dueDate),
                 invoiceMonth: invoice.month,
             })

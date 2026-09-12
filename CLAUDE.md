@@ -4,8 +4,8 @@ Mobile-first personal finance manager. Core feature: register an expense
 in under 15 seconds via a deterministic (regex, no AI) natural-language
 parser. Turborepo/pnpm monorepo: Next.js App Router (`apps/web`) backed by
 shared `packages/domain`, `packages/db`, `packages/api` (Better Auth server
-instance today; a tRPC layer is planned — see
-`docs/superpowers/plans/2026-09-09-bolso-mvp-implementation/section-e-api-trpc.md`).
+instance plus a tRPC API layer — see
+`docs/superpowers/plans/2026-09-09-bolso-mvp-implementation/section-e1-api-trpc.md`).
 PostgreSQL (Drizzle ORM) + Better Auth (with JWT plugin, email/password
 only — no Google OAuth in MVP).
 
@@ -24,7 +24,7 @@ only — no Google OAuth in MVP).
   - `src/tests/` — vitest tests for web-only concerns (auth client, db connectivity smoke test)
 - `packages/domain/` (`@contai/domain`) — pure business logic + zod schemas, zero DB/Next dependency, see `packages/domain/CLAUDE.md`
 - `packages/db/` (`@contai/db`) — Drizzle ORM client + schema, see `packages/db/CLAUDE.md`
-- `packages/api/` (`@contai/api`) — Better Auth server instance today; tRPC router layer planned, not yet built — see `packages/api/CLAUDE.md`
+- `packages/api/` (`@contai/api`) — Better Auth server instance plus a tRPC router layer (six resources: cards, categories, merchants, expenses, occurrences, reports) — see `packages/api/CLAUDE.md`
 - `scripts/` — standalone dev scripts (e.g. `db:seed`) run from the repo root, see `scripts/CLAUDE.md`
 - `pnpm-workspace.yaml` / `turbo.json` / `tsconfig.base.json` — workspace config
 
