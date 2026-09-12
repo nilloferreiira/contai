@@ -1,9 +1,10 @@
 # packages/domain (`@contai/domain`)
 
 Pure business logic — no database, tRPC, or Next.js dependency. Every
-function is a plain input→output transformation, unit-tested colocated
-as `*.test.ts`. Importable by `packages/api` (server) and, later, an RN
-app directly.
+function is a plain input→output transformation. Implementation lives in
+`src/`, tests live in `tests/` mirroring `src/`'s structure (e.g.
+`src/date.ts` is tested by `tests/date.test.ts`). Importable by
+`packages/api` (server) and, later, an RN app directly.
 
 - `date.ts` / `money.ts` — primitives used by everything else.
 - `invoice.ts` — closing/due-day math for a card cycle.

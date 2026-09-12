@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toISODate, monthKey, clampDay } from './date'
+import { toISODate, monthKey, clampDay } from '../src/date'
 
 describe('toISODate', () => {
     it('formats a date as YYYY-MM-DD ignoring time', () => {

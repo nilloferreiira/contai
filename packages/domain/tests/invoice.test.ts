@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getInvoiceForExpense, type CardCycle } from './invoice'
-import { toISODate } from './date'
+import { getInvoiceForExpense, type CardCycle } from '../src/invoice'
+import { toISODate } from '../src/date'
 
 const card: CardCycle = { closing_day: 10, due_day: 20 }
 

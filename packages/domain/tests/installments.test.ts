@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { generateInstallments } from './installments'
-import type { CardCycle } from './invoice'
+import { generateInstallments } from '../src/installments'
+import type { CardCycle } from '../src/invoice'
 
 const card: CardCycle = { closing_day: 10, due_day: 20 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseAmount, parseInstallmentCount, parseRecurrenceFrequency, parseExplicitDate } from './parser'
+import { parseAmount, parseInstallmentCount, parseRecurrenceFrequency, parseExplicitDate } from '../src/parser'
 
 describe('parseAmount', () => {
     it('parses a plain integer', () => {
@@ -72,7 +72,7 @@ describe('parseExplicitDate', () => {
     })
 })
 
-import { parseExpenseInput, type ParserContext } from './parser'
+import { parseExpenseInput, type ParserContext } from '../src/parser'
 
 const context: ParserContext = {
     cards: [{ id: 'card-1', name: 'Nubank' }],
