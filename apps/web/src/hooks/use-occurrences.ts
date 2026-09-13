@@ -15,6 +15,7 @@ export function useUpdateOccurrence() {
         trpc.occurrences.update.mutationOptions({
             onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: trpc.occurrences.list.queryKey() })
+                queryClient.invalidateQueries({ queryKey: trpc.reports.summary.queryKey() })
                 toast.success('Ocorrência atualizada')
             },
             onError: (error) => toast.error(error.message),
@@ -29,6 +30,7 @@ export function useDeleteOccurrence() {
         trpc.occurrences.delete.mutationOptions({
             onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: trpc.occurrences.list.queryKey() })
+                queryClient.invalidateQueries({ queryKey: trpc.reports.summary.queryKey() })
                 toast.success('Ocorrência removida')
             },
             onError: (error) => toast.error(error.message),
