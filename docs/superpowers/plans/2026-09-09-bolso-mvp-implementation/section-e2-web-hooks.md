@@ -389,6 +389,17 @@ the other two invalidation lines back in as one-line additions once Tasks 23/24 
 execute Tasks 22-24 together before running `pnpm --filter web typecheck` if working
 task-by-task with review checkpoints, prefer the former (incremental, always-green).
 
+Note: `createExpenseInputSchema`'s `purchaseDate` field (`section-e1-api-trpc.md` Task 22)
+is `z.string().date()` — a calendar-date-only string (`'YYYY-MM-DD'`), not a full timestamp.
+This was changed post-implementation (a final-review fix) specifically because a
+`z.coerce.date()` timestamp caused a confirmed off-by-one-day bug once it round-tripped
+through the domain layer's local-timezone date math, on the exact "register an expense in
+15 seconds" evening-use path this app targets. Whatever builds the actual expense form
+(Section F's quick-add/manual dialog, which consumes this hook) must send `purchaseDate` as
+a plain `'YYYY-MM-DD'` string — e.g. from a date picker, format with the calendar date only,
+never `new Date().toISOString()` or similar, which would send a full timestamp and fail the
+schema.
+
 - [ ] **Step 2: Verify manually**
 
 ```bash
