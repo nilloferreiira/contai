@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { and, eq, isNull } from 'drizzle-orm'
 import { cards, categories, expenseInstallments, expenses, installmentPlans, merchants, recurrences } from '@contai/db'
 import {
+    fromISODate,
     generateInstallments,
     generateRecurrenceOccurrences,
     getInvoiceForExpense,
@@ -38,7 +39,7 @@ export const createExpenseInputSchema = z
 export type CreateExpenseInput = z.infer<typeof createExpenseInputSchema>
 
 export async function createExpense(db: Database, userId: string, input: CreateExpenseInput) {
-    const purchaseDate = new Date(input.purchaseDate)
+    const purchaseDate = fromISODate(input.purchaseDate)
 
     return db.transaction(async (tx) => {
         let categoryId: string | null = null
@@ -157,14 +158,14 @@ export async function createExpense(db: Database, userId: string, input: CreateE
                 purchaseDate,
                 input.frequency,
                 untilDate,
-                input.endDate ? new Date(input.endDate) : null,
+                input.endDate ? fromISODate(input.endDate) : null,
             )
 
             const occurrences = await tx
                 .insert(expenseInstallments)
                 .values(
                     dates.map((date) => {
-                        const occurrenceDate = new Date(date)
+                        const occurrenceDate = fromISODate(date)
                         const invoice = getInvoiceForExpense(occurrenceDate, card)
                         return {
                             userId,

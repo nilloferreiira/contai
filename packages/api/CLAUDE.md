@@ -18,3 +18,5 @@ Better Auth server instance (`auth.ts`) + the tRPC API layer.
 A future RN client should only ever import `AppRouter`'s **type** (`import type { AppRouter }`) — type-only imports are erased at compile time and prevent Metro from resolving `@contai/db`'s Node builtins transitively.
 
 `trpc.ts` configures `transformer: superjson`. Any tRPC client (a future `apps/web` client link, or an RN client) MUST configure the matching `transformer: superjson`, or dates and other superjson-specific types will fail to (de)serialize correctly over HTTP.
+
+Any `YYYY-MM-DD` string coming in from a zod schema (e.g. `purchaseDate`, `endDate`) must be parsed with `@contai/domain`'s `fromISODate`, never the bare `new Date(str)` constructor — see `date.ts`'s doc comment in `@contai/domain` for why. `expenses-service.ts` shipped this exact bug once already.

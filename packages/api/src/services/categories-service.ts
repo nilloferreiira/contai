@@ -35,6 +35,13 @@ export async function listCategories(db: Database, userId: string) {
     return [...existing, ...inserted].sort((a, b) => a.name.localeCompare(b.name))
 }
 
+function getPostgresErrorCode(error: unknown): string | undefined {
+    if (!error || typeof error !== 'object') return undefined
+    if ('code' in error && typeof error.code === 'string') return error.code
+    if ('cause' in error) return getPostgresErrorCode(error.cause)
+    return undefined
+}
+
 export async function createCategory(db: Database, userId: string, input: CategoryInput) {
     try {
         const [data] = await db
@@ -43,7 +50,7 @@ export async function createCategory(db: Database, userId: string, input: Catego
             .returning()
         return data
     } catch (error: unknown) {
-        if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        if (getPostgresErrorCode(error) === '23505') {
             throw new ServiceError('CONFLICT', 'Categoria já existe')
         }
         throw error
