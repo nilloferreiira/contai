@@ -49,7 +49,15 @@ already reference (`useCards()`, `useCreateExpense()`, etc.).
 
 - [ ] **Step 1: Add tRPC client dependencies**
 
-`apps/web/package.json` — add to `dependencies`: `"@trpc/client": "^11"`, `"@trpc/tanstack-react-query": "^11"`.
+`apps/web/package.json` — add to `dependencies`: `"@trpc/client": "^11"`, `"@trpc/tanstack-react-query": "^11"`, `"superjson": "^2"` (must match the version `packages/api` uses — check `packages/api/package.json`).
+
+Note: `packages/api/src/trpc.ts` (`section-e1-api-trpc.md` Task 18) configures
+`transformer: superjson` on its `initTRPC` instance — this was a final-review fix
+added after that plan section's own execution, closing a bug where `Date` columns
+(`createdAt`, `deletedAt`, occurrence dates, etc.) would silently serialize to plain
+strings over the HTTP fetch-adapter route while `AppRouter`'s inferred types still
+claimed `Date`. The client link below MUST configure the same transformer, or every
+response will fail to deserialize those fields correctly.
 
 - [ ] **Step 2: Write `apps/web/src/lib/trpc/client.ts`**
 
@@ -70,6 +78,7 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>()
 import { createTRPCClient, httpBatchLink } from '@trpc/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
+import superjson from 'superjson'
 import type { AppRouter } from '@contai/api'
 import { TRPCProvider } from './client'
 
@@ -77,7 +86,7 @@ export function TRPCReactProvider({ children }: { children: ReactNode }) {
     const queryClient = useQueryClient()
     const [trpcClient] = useState(() =>
         createTRPCClient<AppRouter>({
-            links: [httpBatchLink({ url: '/api/trpc' })],
+            links: [httpBatchLink({ url: '/api/trpc', transformer: superjson })],
         }),
     )
 
