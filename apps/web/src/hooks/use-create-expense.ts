@@ -9,6 +9,7 @@ export function useCreateExpense() {
         trpc.expenses.create.mutationOptions({
             onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: trpc.merchants.list.queryKey() })
+                queryClient.invalidateQueries({ queryKey: trpc.occurrences.list.queryKey() })
                 toast.success('Despesa registrada')
             },
             onError: (error) => toast.error(error.message),
