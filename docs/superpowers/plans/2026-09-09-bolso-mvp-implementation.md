@@ -47,8 +47,14 @@ Each row links to that section's full file (tasks, files, interfaces, step-by-st
   E1/E2 together supersede the REST version previously at `section-e-api-hooks.md` and the combined tRPC doc previously at `section-e-api-trpc.md` — both never built, both deleted (see git history).
 - [x] **Section F: UI components** (Tasks 25-31) — `2026-09-09-bolso-mvp-implementation/section-f-ui-components.md`
   Card visual/colors, quick-add, manual expense dialog + form, occurrence list/row, occurrence sheet, summary tiles + month switcher. Built per `2026-09-14-section-f-ui-components-worktree-plan.md` (a rewrite against post-tRPC-migration source); bottom-nav's `?focus=quick-add` autofocus wiring and all manual/live verification are deferred to Section G (Task 32+), since no app routes exist yet.
-- [ ] **Section G: Pages** (Tasks 32-35) — `2026-09-09-bolso-mvp-implementation/section-g-pages.md`
-  `/inicio`, `/mes`, `/relatorios`, `/ajustes` (+ card/category forms, Better Auth sign-out).
+- [x] **Section G: Pages** (Tasks 32-35) — `2026-09-09-bolso-mvp-implementation/section-g-pages.md`
+  `/inicio`, `/mes`, `/relatorios`, `/ajustes` (+ card/category forms, Better Auth sign-out). Built per
+  `2026-09-14-section-g-pages-worktree-plan.md` (a rewrite against post-tRPC-migration source, same
+  pattern as Section F). Final whole-branch review found and fixed a category-delete data-integrity
+  bug, unclearable filters, a non-persisting theme toggle, a silent form-validation gap, missing
+  query error states, a card-color default mismatch, and the deferred same-page FAB-autofocus case
+  (see the worktree plan's ledger for detail); some Minor UX/architecture items were deferred (see
+  the worktree plan for that list).
 - [ ] **Section H: Polish** (Tasks 36-37) — `2026-09-09-bolso-mvp-implementation/section-h-polish.md`
   Loading/empty/error states + accessibility audit, metadata/PWA basics + final quality pass.
 

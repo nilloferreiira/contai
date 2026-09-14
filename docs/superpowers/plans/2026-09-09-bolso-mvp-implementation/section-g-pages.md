@@ -46,7 +46,7 @@
 - Consumes: `QuickAdd` (Task 26), `ManualExpenseDialog` (Task 27), `OccurrenceList` (Task 28), `OccurrenceSheet` (Task 29), `SummaryTiles`/`useOccurrences`/`apiClient` for summary (Tasks 23-24, 30)
 - Produces: the home page — no further tasks consume this directly, it's a leaf.
 
-- [ ] **Step 1: Write the page**
+- [x] **Step 1: Write the page**
 
 Client Component (needs `useSearchParams` for the `focus=quick-add` param and local state for the selected occurrence / manual dialog open state). Structure:
 
@@ -99,7 +99,7 @@ export default function InicioPage() {
 }
 ```
 
-- [ ] **Step 2: Verify manually (golden path + edge case)**
+- [ ] **Step 2: Verify manually (golden path + edge case)** (superseded — executed per `2026-09-14-section-g-pages-worktree-plan.md`; static verification (typecheck/lint/test/build) is green, no live browser walk was performed)
 
 ```bash
 pnpm dev
@@ -107,7 +107,7 @@ pnpm dev
 
 Golden path: land on `/inicio` via the bottom-nav `+`, confirm the quick-add is focused, type an expense, press Enter, confirm it appears under "Hoje" and the total updates. Edge case: with zero expenses ever created, confirm "Hoje" shows the `OccurrenceList` empty state ("Nenhuma despesa encontrada.") instead of crashing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/app/\(app\)/inicio
@@ -125,11 +125,11 @@ git commit -m "feat: add /inicio page with quick-add and today's expenses"
 - Consumes: `MonthSwitcher` (Task 30), `OccurrenceList` (Task 28), `OccurrenceSheet` (Task 29), `useOccurrences` (Task 23), `useCategories`/`useCards` (Tasks 19-20)
 - Produces: the month page — leaf.
 
-- [ ] **Step 1: Write the page**
+- [x] **Step 1: Write the page**
 
 Client Component with local state: `month` (default current, via `MonthSwitcher`), `search` (text input, debounced or plain controlled — plain is fine for MVP), `categoryFilter`/`cardFilter`/`typeFilter`/`statusFilter` (shadcn `Select`s populated from `useCategories()`/`useCards()`). Compute `from`/`to` as the first/last day of `month` and pass all filters into `useOccurrences({ from, to, q: search, categoryId: categoryFilter, cardId: cardFilter, status: statusFilter })`. Render `<OccurrenceList occurrences={data} showDateHeaders onSelect={setSelected} />` and `<OccurrenceSheet occurrence={selected} onOpenChange={...} />`.
 
-- [ ] **Step 2: Verify manually (golden path + edge case)**
+- [ ] **Step 2: Verify manually (golden path + edge case)** (superseded — see Task 32's note above)
 
 ```bash
 pnpm dev
@@ -137,7 +137,7 @@ pnpm dev
 
 Golden path: navigate to a month with known expenses (from Task 22's manual testing), confirm they're grouped by date. Edge case: filter by a category with zero matches, confirm the empty state shows instead of a blank screen; navigate to next/previous month via `MonthSwitcher` and confirm the list refetches (check the network tab for a new `/api/occurrences` call with updated `from`/`to`).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/app/\(app\)/mes
@@ -155,11 +155,11 @@ git commit -m "feat: add /mes page with month navigation, search, and filters"
 - Consumes: `SummaryTiles` (Task 30), `MonthSwitcher` (Task 30), `useCategories`/`useCards` (Tasks 19-20, to resolve IDs to names), `apiClient`/`queryKeys` for `/api/reports/summary` (Task 24)
 - Produces: the reports page — leaf.
 
-- [ ] **Step 1: Write the page**
+- [x] **Step 1: Write the page**
 
 Client Component: `month` state via `MonthSwitcher`, fetch `useQuery({ queryKey: queryKeys.summary(month), queryFn: () => apiClient.get(\`/api/reports/summary?month=${month}\`) })`. Resolve `byCategory`/`byCard` IDs to display names by cross-referencing `useCategories()`/`useCards()` data before passing into `<SummaryTiles>` — build a lookup map (`Object.fromEntries(categories.map(c => [c.id, c.name]))`) and remap the summary's keys, or extend `SummaryTiles` usage inline with a small wrapper that does the remap in this page (keep `SummaryTiles` itself ID-keyed and presentational, per Task 30's note).
 
-- [ ] **Step 2: Verify manually (golden path + edge case)**
+- [ ] **Step 2: Verify manually (golden path + edge case)** (superseded — see Task 32's note above)
 
 ```bash
 pnpm dev
@@ -167,7 +167,7 @@ pnpm dev
 
 Golden path: view the month used in Task 22's testing, confirm totals match what was verified there and category/card names (not raw UUIDs) are shown. Edge case: a month with zero occurrences shows `R$ 0,00` and empty category/card sections without crashing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/app/\(app\)/relatorios
@@ -187,19 +187,19 @@ git commit -m "feat: add /relatorios page with monthly aggregations"
 - Consumes: `createCardSchema`/`createCategorySchema` (Task 18); `useCards`/`useCreateCard`/`useUpdateCard`/`useDeleteCard` (Task 19); `useCategories`/`useCreateCategory`/`useUpdateCategory`/`useDeleteCategory` (Task 20); `CardVisual`/`CardColorPicker` (Task 25); `authClient` from `@/lib/auth-client` (Task 5) for sign-out
 - Produces: the settings page — leaf.
 
-- [ ] **Step 1: Write `src/components/forms/card-form.tsx`**
+- [x] **Step 1: Write `src/components/forms/card-form.tsx`**
 
 RHF + zod form (`zodResolver(createCardSchema)`) with fields: name (text), closing_day/due_day (number 1-31), credit_limit (optional number), color (`CardColorPicker`). Render a live `<CardVisual size="lg" color={watch('color')} name={watch('name')} />` preview above the fields as the user types/picks, per the spec's "seletor de cor com preview" requirement. On submit, call `useCreateCard()` or `useUpdateCard()` depending on whether an `id` prop was passed in.
 
-- [ ] **Step 2: Write `src/components/forms/category-form.tsx`**
+- [x] **Step 2: Write `src/components/forms/category-form.tsx`**
 
 RHF + zod form (`zodResolver(createCategorySchema)`) with a single `name` text field (icon picker is out of scope for MVP — omit the `icon` field from the form, leave it `null`). Calls `useCreateCategory()`/`useUpdateCategory()`.
 
-- [ ] **Step 3: Write `src/app/(app)/ajustes/page.tsx`**
+- [x] **Step 3: Write `src/app/(app)/ajustes/page.tsx`**
 
 Client Component with three sections: Cards (list via `useCards()`, each rendered with `<CardVisual size="sm">` + edit/delete buttons, plus an "add card" button opening `<CardForm>` in a `Dialog`), Categories (list via `useCategories()` with edit/delete, plus an "add category" button opening `<CategoryForm>` in a `Dialog`), and a "Sair" button calling `authClient.signOut()` then `router.push('/login')`. Theme toggle: a `Switch` reading/writing a `dark` class on `document.documentElement` persisted to `localStorage` (no next-themes dependency needed for MVP's single light/dark toggle).
 
-- [ ] **Step 4: Verify manually (golden path + edge case)**
+- [ ] **Step 4: Verify manually (golden path + edge case)** (superseded — see Task 32's note above)
 
 ```bash
 pnpm dev
@@ -207,7 +207,7 @@ pnpm dev
 
 Golden path: create a card with a chosen color, confirm the `lg` preview updates live before submit and the card appears in the list afterward with the right color. Edge case: try deleting a category that's referenced by an existing occurrence — confirm the FK is `on delete set null` (per the schema defined in Section C) so the delete succeeds and the occurrence's `category_id` becomes null rather than erroring. Toggle the theme switch, reload the page, confirm the choice persisted.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/forms/card-form.tsx src/components/forms/category-form.tsx src/app/\(app\)/ajustes

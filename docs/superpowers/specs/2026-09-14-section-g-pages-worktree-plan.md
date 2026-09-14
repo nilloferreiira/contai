@@ -93,7 +93,7 @@ current, correct ones), `docs/superpowers/specs/2026-09-09-bolso-mvp-design.md`,
 
 ### Task 0: Create and verify the worktree
 
-- [ ] **Step 1: Create the worktree off `develop`**
+- [x] **Step 1: Create the worktree off `develop`**
 
 Invoke the `superpowers:using-git-worktrees` skill. If falling back to raw
 git (matches this project's existing convention — sibling directory):
@@ -102,14 +102,14 @@ git (matches this project's existing convention — sibling directory):
 git worktree add -b feature/g-pages ../contai-g-pages develop
 ```
 
-- [ ] **Step 2: Install dependencies**
+- [x] **Step 2: Install dependencies**
 
 ```bash
 cd ../contai-g-pages
 pnpm install
 ```
 
-- [ ] **Step 3: Sanity-check before starting**
+- [x] **Step 3: Sanity-check before starting**
 
 ```bash
 pnpm turbo run typecheck
@@ -133,7 +133,7 @@ four pages remounting a shared hook (cards/categories are read on nearly all
 of them) triggers a background refetch on every navigation. One global
 default fixes that without touching any of the six hook files individually.
 
-- [ ] **Step 1: Add a default `staleTime`**
+- [x] **Step 1: Add a default `staleTime`**
 
 ```tsx
 'use client'
@@ -164,13 +164,13 @@ export function QueryProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 pnpm --filter web typecheck
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/src/providers/query-provider.tsx
@@ -200,7 +200,7 @@ column), so no `Number(...)` wrapping needed. Grouping/"today" must use
 midnight, drifts a day from local near a day boundary). No `<main className="p-4">`
 wrapper — the layout already supplies padding/width.
 
-- [ ] **Step 1: Write the page**
+- [x] **Step 1: Write the page**
 
 ```tsx
 'use client'
@@ -246,7 +246,7 @@ export default function InicioPage() {
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [ ] **Step 2: Verify manually** (static verification only — typecheck/lint/test/build all green; no live browser walk performed in this environment)
 
 ```bash
 pnpm --filter web typecheck
@@ -259,7 +259,7 @@ and the total updates. Edge case: with zero expenses ever created, confirm
 `OccurrenceList`'s built-in empty state ("Nenhuma despesa encontrada.") shows
 instead of crashing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add "apps/web/src/app/(app)/inicio"
@@ -289,7 +289,7 @@ for a pages-only section. `useOccurrences`'s filter type comes from
 `OccurrenceFilters` (re-exported from `@contai/api`), which the hook already
 types its parameter as — no need to import it separately in the page.
 
-- [ ] **Step 1: Write the page**
+- [x] **Step 1: Write the page**
 
 ```tsx
 'use client'
@@ -390,7 +390,7 @@ it, or use it if a different month-boundary approach is preferred. Keep
 `toISODate` for converting the computed range boundaries back to strings for
 the `occurrences.list` query.
 
-- [ ] **Step 2: Verify manually**
+- [ ] **Step 2: Verify manually** (see Task 32's note above)
 
 ```bash
 pnpm --filter web typecheck
@@ -402,7 +402,7 @@ grouped by date header. Edge case: filter by a category with zero matches,
 confirm the empty state shows; switch months via `MonthSwitcher`, confirm a
 new `/api/trpc` batch request fires (Network tab) with updated `from`/`to`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add "apps/web/src/app/(app)/mes"
@@ -430,7 +430,7 @@ keyed by category/card **id** (`packages/domain/src/dashboard.ts`'s
 the lookup maps and remap before passing the props in, exactly as the
 original plan intended.
 
-- [ ] **Step 1: Write the page**
+- [x] **Step 1: Write the page**
 
 ```tsx
 'use client'
@@ -469,7 +469,7 @@ export default function RelatoriosPage() {
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [ ] **Step 2: Verify manually** (see Task 32's note above)
 
 ```bash
 pnpm --filter web typecheck
@@ -481,7 +481,7 @@ category/card **names** show (not raw UUIDs). Edge case: a month with zero
 occurrences shows `R$ 0,00` and empty category/card sections without
 crashing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add "apps/web/src/app/(app)/relatorios"
@@ -523,7 +523,7 @@ import a runtime value from `@contai/api` — it transitively pulls in
 `@contai/domain`, exactly mirroring how `expense-schema.ts` already works,
 before either form is written.
 
-- [ ] **Step 0a: Move `cardInputSchema` into `@contai/domain`**
+- [x] **Step 0a: Move `cardInputSchema` into `@contai/domain`**
 
 Create `packages/domain/src/schemas/card-schema.ts`:
 
@@ -553,7 +553,7 @@ import { cardInputSchema, updateCardInputSchema, type CardInput, type UpdateCard
 (Keep every other line — `listCards`/`createCard`/`updateCard`/`deleteCard`
 — exactly as-is; only the schema source changes.)
 
-- [ ] **Step 0b: Move `categoryInputSchema` into `@contai/domain`**
+- [x] **Step 0b: Move `categoryInputSchema` into `@contai/domain`**
 
 Create `packages/domain/src/schemas/category-schema.ts`:
 
@@ -573,7 +573,7 @@ export type UpdateCategoryInput = z.infer<typeof updateCategoryInputSchema>
 Edit `packages/api/src/services/categories-service.ts` similarly — remove
 the local schema definitions, import from `@contai/domain`.
 
-- [ ] **Step 0c: Re-export both from the domain barrel**
+- [x] **Step 0c: Re-export both from the domain barrel**
 
 Edit `packages/domain/src/index.ts`, add after the existing schema exports:
 
@@ -582,14 +582,14 @@ export * from './schemas/card-schema'
 export * from './schemas/category-schema'
 ```
 
-- [ ] **Step 0d: Document the new schemas**
+- [x] **Step 0d: Document the new schemas**
 
 Edit `packages/domain/CLAUDE.md`'s `schemas/` bullet to also mention
 `card-schema.ts` (`cardInputSchema`) and `category-schema.ts`
 (`categoryInputSchema`) alongside `auth-schema.ts`/`expense-schema.ts`, same
 rationale (shared between the tRPC services and the client forms below).
 
-- [ ] **Step 0e: Verify the move**
+- [x] **Step 0e: Verify the move**
 
 ```bash
 pnpm turbo run typecheck
@@ -597,14 +597,14 @@ pnpm turbo run typecheck
 
 Expected: green — this is a pure relocation, no behavior change.
 
-- [ ] **Step 0f: Commit the schema move separately**
+- [x] **Step 0f: Commit the schema move separately**
 
 ```bash
 git add packages/domain packages/api/src/services/cards-service.ts packages/api/src/services/categories-service.ts
 git commit -m "refactor: move card/category schemas into @contai/domain"
 ```
 
-- [ ] **Step 1: Write `apps/web/src/components/forms/card-form.tsx`**
+- [x] **Step 1: Write `apps/web/src/components/forms/card-form.tsx`**
 
 Follows `expense-form.tsx`'s established pattern: `useWatch({ control, name })`
 per watched field (not destructured `watch`), `Select`s driven by
@@ -703,7 +703,7 @@ export function CardForm({ id, defaultValues, onSuccess }: CardFormProps) {
 }
 ```
 
-- [ ] **Step 2: Write `apps/web/src/components/forms/category-form.tsx`**
+- [x] **Step 2: Write `apps/web/src/components/forms/category-form.tsx`**
 
 ```tsx
 'use client'
@@ -757,7 +757,7 @@ export function CategoryForm({ id, defaultValues, onSuccess }: CategoryFormProps
 }
 ```
 
-- [ ] **Step 3: Write `apps/web/src/app/(app)/ajustes/page.tsx`**
+- [x] **Step 3: Write `apps/web/src/app/(app)/ajustes/page.tsx`**
 
 ```tsx
 'use client'
@@ -862,7 +862,7 @@ export default function AjustesPage() {
 }
 ```
 
-- [ ] **Step 4: Verify manually**
+- [ ] **Step 4: Verify manually** (see Task 32's note above)
 
 ```bash
 pnpm --filter web typecheck
@@ -876,7 +876,7 @@ occurrence, confirm the FK `on delete set null` lets the delete succeed and
 the occurrence's `categoryId` becomes null rather than erroring. Toggle the
 theme switch, reload, confirm it persisted.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/components/forms apps/web/src/app/\(app\)/ajustes
