@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { toISODate, monthKey, clampDay, fromISODate } from '../src/date'
+import { toISODate, monthKey, clampDay, fromISODate, monthLabel } from '../src/date'
 
 describe('toISODate', () => {
     it('formats a date as YYYY-MM-DD ignoring time', () => {
@@ -52,5 +52,15 @@ describe('clampDay', () => {
     it('keeps the day when it fits in the month', () => {
         const result = clampDay(new Date(2026, 2, 1), 15)
         expect(toISODate(result)).toBe('2026-03-15')
+    })
+})
+
+describe('monthLabel', () => {
+    it('formats a date as lowercase Portuguese month name and year', () => {
+        expect(monthLabel(new Date(2026, 8, 9))).toBe('setembro 2026')
+    })
+
+    it('handles the first month of the year', () => {
+        expect(monthLabel(new Date(2026, 0, 1))).toBe('janeiro 2026')
     })
 })
