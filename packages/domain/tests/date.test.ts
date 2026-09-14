@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { toISODate, monthKey, clampDay, fromISODate, monthLabel } from '../src/date'
+import { toISODate, monthKey, clampDay, fromISODate, monthLabel, monthRange } from '../src/date'
 
 describe('toISODate', () => {
     it('formats a date as YYYY-MM-DD ignoring time', () => {
@@ -62,5 +62,15 @@ describe('monthLabel', () => {
 
     it('handles the first month of the year', () => {
         expect(monthLabel(new Date(2026, 0, 1))).toBe('Janeiro 2026')
+    })
+})
+
+describe('monthRange', () => {
+    it('returns the first and last ISO date of a YYYY-MM month', () => {
+        expect(monthRange('2026-02')).toEqual({ from: '2026-02-01', to: '2026-02-28' })
+    })
+
+    it('handles a 31-day month', () => {
+        expect(monthRange('2026-01')).toEqual({ from: '2026-01-01', to: '2026-01-31' })
     })
 })

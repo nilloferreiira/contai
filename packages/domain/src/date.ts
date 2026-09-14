@@ -44,3 +44,10 @@ const MONTHS = [
 export function monthLabel(date: Date): string {
     return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
 }
+
+export function monthRange(month: string): { from: string; to: string } {
+    const [year, m] = month.split('-').map(Number)
+    const start = new Date(year, m - 1, 1)
+    const end = new Date(year, m, 0)
+    return { from: toISODate(start), to: toISODate(end) }
+}

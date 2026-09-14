@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { formatBRL, monthKey, splitRealizedForecast, toISODate, type Occurrence } from '@contai/domain'
+import { formatBRL, monthKey, monthRange, splitRealizedForecast, type Occurrence } from '@contai/domain'
 import { MonthSwitcher } from '@/components/app/month-switcher'
 import { OccurrenceList } from '@/components/app/occurrence-list'
 import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleton'
@@ -26,13 +26,6 @@ function toDomainOccurrence(o: OccurrenceRow): Occurrence {
         occurrence_date: o.occurrenceDate,
         due_date: o.dueDate,
     }
-}
-
-function monthRange(month: string) {
-    const [year, m] = month.split('-').map(Number)
-    const start = new Date(year, m - 1, 1)
-    const end = new Date(year, m, 0)
-    return { from: toISODate(start), to: toISODate(end) }
 }
 
 export default function MesPage() {
