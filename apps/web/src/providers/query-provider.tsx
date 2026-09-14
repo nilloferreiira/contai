@@ -3,13 +3,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useState, type ReactNode } from 'react'
+import { TRPCReactProvider } from '@/lib/trpc/provider'
 
 export function QueryProvider({ children }: { children: ReactNode }) {
     const [queryClient] = useState(() => new QueryClient())
 
     return (
         <QueryClientProvider client={queryClient}>
-            {children}
+            <TRPCReactProvider>{children}</TRPCReactProvider>
             <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
     )
