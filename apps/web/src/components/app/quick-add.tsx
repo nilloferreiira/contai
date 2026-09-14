@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useMemo, useState, type KeyboardEvent, type Ref } from 'react'
 import { parseExpenseInput, formatBRL, toISODate } from '@contai/domain'
 import { useCards } from '@/hooks/use-cards'
 import { useCategories } from '@/hooks/use-categories'
@@ -10,11 +10,11 @@ import { Input } from '@/components/ui/input'
 
 export interface QuickAddProps {
     autoFocus?: boolean
+    ref?: Ref<HTMLInputElement>
 }
 
-export function QuickAdd({ autoFocus }: QuickAddProps) {
+export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
     const [text, setText] = useState('')
-    const inputRef = useRef<HTMLInputElement>(null)
     const { data: cards = [] } = useCards()
     const { data: categories = [] } = useCategories()
     const { data: merchants = [] } = useMerchants()
@@ -60,7 +60,7 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
     return (
         <div data-slot="quick-add" className="rounded-3xl border border-border bg-card p-4 shadow-sm">
             <Input
-                ref={inputRef}
+                ref={ref}
                 autoFocus={autoFocus}
                 value={text}
                 onChange={(e) => setText(e.target.value)}

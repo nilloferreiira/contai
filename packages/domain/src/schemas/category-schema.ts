@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const DEFAULT_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Compras', 'Outros']
+
 export const categoryInputSchema = z.object({
     name: z.string().min(1, 'Informe um nome').max(60),
     icon: z.string().max(40).nullable().optional(),

@@ -1,10 +1,20 @@
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { categories } from '@contai/db'
-import { categoryInputSchema, updateCategoryInputSchema, type CategoryInput, type UpdateCategoryInput } from '@contai/domain'
+import {
+    categoryInputSchema,
+    updateCategoryInputSchema,
+    DEFAULT_CATEGORIES,
+    type CategoryInput,
+    type UpdateCategoryInput,
+} from '@contai/domain'
 import { ServiceError } from './errors'
 import type { Database } from './types'
 
-const DEFAULT_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Compras', 'Outros']
+// Re-exported for backward compatibility: the list now lives in
+// `@contai/domain` (see packages/domain/src/schemas/category-schema.ts) so
+// client components can import it without pulling in @contai/api's barrel
+// (which builds a betterAuth instance at module scope).
+export { DEFAULT_CATEGORIES }
 
 export async function listCategories(db: Database, userId: string) {
     const existing = await db

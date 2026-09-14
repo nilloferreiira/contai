@@ -29,7 +29,7 @@ export default function MesPage() {
     const { data: categories = [] } = useCategories()
     const { data: cards = [] } = useCards()
     const { from, to } = monthRange(month)
-    const { data: occurrences = [] } = useOccurrences({
+    const { data: occurrences = [], isError: occurrencesError } = useOccurrences({
         from,
         to,
         q: search || undefined,
@@ -48,11 +48,15 @@ export default function MesPage() {
                 onChange={(e) => setSearch(e.target.value)}
             />
             <div className="flex gap-2">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select
+                    value={categoryFilter ?? 'all'}
+                    onValueChange={(v) => setCategoryFilter(v === 'all' ? undefined : v)}
+                >
                     <SelectTrigger aria-label="Categoria">
                         <SelectValue placeholder="Categoria" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
                         {categories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                                 {category.name}
@@ -60,11 +64,12 @@ export default function MesPage() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Select value={cardFilter} onValueChange={setCardFilter}>
+                <Select value={cardFilter ?? 'all'} onValueChange={(v) => setCardFilter(v === 'all' ? undefined : v)}>
                     <SelectTrigger aria-label="Cartão">
                         <SelectValue placeholder="Cartão" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
                         {cards.map((card) => (
                             <SelectItem key={card.id} value={card.id}>
                                 {card.name}
@@ -72,17 +77,22 @@ export default function MesPage() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+                <Select
+                    value={statusFilter ?? 'all'}
+                    onValueChange={(v) => setStatusFilter(v === 'all' ? undefined : (v as typeof statusFilter))}
+                >
                     <SelectTrigger aria-label="Status">
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
                         <SelectItem value="pending">Pendente</SelectItem>
                         <SelectItem value="paid">Pago</SelectItem>
                         <SelectItem value="cancelled">Cancelado</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+            {occurrencesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
             <OccurrenceList occurrences={occurrences} showDateHeaders onSelect={setSelected} />
             <OccurrenceSheet occurrence={selected} onOpenChange={(open) => !open && setSelected(null)} />
         </main>

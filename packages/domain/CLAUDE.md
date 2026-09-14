@@ -30,7 +30,12 @@ function is a plain input→output transformation. Implementation lives in
   `card-schema.ts` (`cardInputSchema`/`updateCardInputSchema`, used by the
   tRPC `cards` router and the client-side card form), and `category-schema.ts`
   (`categoryInputSchema`/`updateCategoryInputSchema`, used by the tRPC
-  `categories` router and the client-side category form) — each lives here,
+  `categories` router and the client-side category form; also
+  `DEFAULT_CATEGORIES`, the seeded category names re-created by
+  `listCategories` on every call — re-exported from
+  `categories-service.ts` for server-side importers, but the client-side
+  `/ajustes` page imports it from here directly so it can hide the delete
+  button for those rows) — each lives here,
   not in `packages/api`, so client components never need to import a runtime
   value from `@contai/api`, which transitively pulls in
   `better-auth`/`@contai/db`.

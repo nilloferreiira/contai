@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { CardVisual } from '@/components/app/card-visual'
 import { CardColorPicker } from '@/components/app/card-color-picker'
+import { DEFAULT_CARD_COLOR } from '@/lib/finance/card-colors'
 
 export interface CardFormProps {
     id?: string
@@ -32,7 +33,7 @@ export function CardForm({ id, defaultValues, onSuccess }: CardFormProps) {
             closingDay: 1,
             dueDay: 10,
             creditLimit: null,
-            color: 'orange',
+            color: DEFAULT_CARD_COLOR,
             ...defaultValues,
         },
     })
@@ -73,7 +74,13 @@ export function CardForm({ id, defaultValues, onSuccess }: CardFormProps) {
 
             <div className="flex flex-col gap-1">
                 <label htmlFor="creditLimit">Limite (opcional)</label>
-                <Input id="creditLimit" type="number" step="0.01" {...register('creditLimit', { valueAsNumber: true })} />
+                <Input
+                    id="creditLimit"
+                    type="number"
+                    step="0.01"
+                    {...register('creditLimit', { setValueAs: (v) => (v === '' ? null : Number(v)) })}
+                />
+                {errors.creditLimit && <span className="text-sm text-destructive">{errors.creditLimit.message}</span>}
             </div>
 
             <div className="flex flex-col gap-1">

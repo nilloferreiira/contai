@@ -14,7 +14,7 @@ function remapByName(byId: Record<string, number>, lookup: Record<string, string
 
 export default function RelatoriosPage() {
 	const [month, setMonth] = useState(monthKey(new Date()))
-	const { data: summary } = useSummary(month)
+	const { data: summary, isError: summaryError } = useSummary(month)
 	const { data: categories = [] } = useCategories()
 	const { data: cards = [] } = useCards()
 
@@ -24,6 +24,7 @@ export default function RelatoriosPage() {
 	return (
 		<main className="flex flex-col gap-4">
 			<MonthSwitcher month={month} onChange={setMonth} />
+			{summaryError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
 			<SummaryTiles
 				total={summary?.total ?? 0}
 				byCategory={remapByName(summary?.byCategory ?? {}, categoryNames)}
