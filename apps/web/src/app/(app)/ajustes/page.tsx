@@ -1,6 +1,6 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { DEFAULT_CATEGORIES } from '@contai/domain'
 import { authClient } from '@/lib/auth-client'
@@ -75,6 +75,12 @@ export default function AjustesPage() {
     const updateCard = useUpdateCard()
     const deleteCategory = useDeleteCategory()
 
+    // The forms stay mounted after a successful create (no more Dialog
+    // unmount to discard react-hook-form state), so force a remount via key
+    // change to reset them back to defaults and avoid a stray re-submit.
+    const [cardFormKey, setCardFormKey] = useState(0)
+    const [categoryFormKey, setCategoryFormKey] = useState(0)
+
     const dark = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeServerSnapshot)
 
     function toggleTheme(checked: boolean) {
@@ -97,7 +103,7 @@ export default function AjustesPage() {
                 </TabsList>
 
                 <TabsContent value="cards" className="flex flex-col gap-6">
-                    <CardForm onSuccess={() => {}} />
+                    <CardForm key={cardFormKey} onSuccess={() => setCardFormKey((k) => k + 1)} />
 
                     <section className="flex flex-col gap-3">
                         {cardsError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
@@ -126,7 +132,7 @@ export default function AjustesPage() {
                 </TabsContent>
 
                 <TabsContent value="categories" className="flex flex-col gap-6">
-                    <CategoryForm onSuccess={() => {}} />
+                    <CategoryForm key={categoryFormKey} onSuccess={() => setCategoryFormKey((k) => k + 1)} />
 
                     <section className="flex flex-col gap-3">
                         {categoriesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}

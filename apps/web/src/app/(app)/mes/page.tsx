@@ -64,7 +64,7 @@ export default function MesPage() {
         })
     }, [occurrences, typeFilter])
 
-    const split = useMemo(() => splitRealizedForecast(occurrences.map(toDomainOccurrence)), [occurrences])
+    const split = useMemo(() => splitRealizedForecast(filtered.map(toDomainOccurrence)), [filtered])
 
     return (
         <main className="flex flex-col gap-4">

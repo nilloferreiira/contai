@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
 import { useCategories } from '@/hooks/use-categories'
 import { useCards } from '@/hooks/use-cards'
+import { useSummary } from '@/hooks/use-summary'
 
 // Duplicated from /mes's page-local mapping (not exported from there) — a
 // small, stable shape conversion that isn't worth a shared module for two
@@ -52,6 +53,7 @@ export default function RelatoriosPage() {
 
     const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useCategories()
     const { data: cards = [], isLoading: cardsLoading, isError: cardsError } = useCards()
+    const { data: summary, isLoading: summaryLoading } = useSummary(month)
 
     const { from, to } = monthRange(month)
     const {
@@ -60,11 +62,18 @@ export default function RelatoriosPage() {
         isError: occurrencesError,
     } = useOccurrences({ from, to })
 
+    // Look back to the start of last month so charges already incurred this
+    // billing cycle (occurrence_date in the past, due_date still upcoming)
+    // are included in the fetch. upcomingInvoices() applies the real
+    // due_date-based filtering itself and drops anything with due_date
+    // before `from` internally.
+    const now = new Date()
+    const invoiceLookback = toISODate(new Date(now.getFullYear(), now.getMonth() - 1, 1))
     const {
         data: pending = [],
         isLoading: pendingLoading,
         isError: pendingError,
-    } = useOccurrences({ from: toISODate(new Date()), status: 'pending' })
+    } = useOccurrences({ from: invoiceLookback, status: 'pending' })
 
     const hasError = categoriesError || cardsError || occurrencesError || pendingError
 
@@ -75,10 +84,6 @@ export default function RelatoriosPage() {
     const domainOccurrences = useMemo(() => occurrences.map(toDomainOccurrence), [occurrences])
     const domainPending = useMemo(() => pending.map(toDomainOccurrence), [pending])
 
-    const monthTotal = useMemo(
-        () => domainOccurrences.reduce((sum, o) => (o.status === 'cancelled' ? sum : sum + o.amount), 0),
-        [domainOccurrences],
-    )
     const typeBreakdown = useMemo(() => breakdownByType(domainOccurrences), [domainOccurrences])
     const categorySlices = useMemo(() => byCategoryTotals(domainOccurrences), [domainOccurrences])
     const cardSlices = useMemo(() => byCardTotals(domainOccurrences), [domainOccurrences])
@@ -104,7 +109,7 @@ export default function RelatoriosPage() {
             {hasError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
 
             <section>
-                {occurrencesLoading ? (
+                {occurrencesLoading || summaryLoading ? (
                     <div className="grid grid-cols-2 gap-3">
                         {Array.from({ length: 4 }).map((_, i) => (
                             <div key={i} className="rounded-2xl border border-border bg-card p-3">
@@ -117,7 +122,10 @@ export default function RelatoriosPage() {
                     <div className="grid grid-cols-2 gap-3">
                         {(
                             [
-                                ['Gastos no mês', monthTotal],
+                                // Matches /inicio's basis (useSummary, filtered server-side on
+                                // invoiceMonth) so the two pages agree under the same label —
+                                // the other 3 tiles intentionally stay occurrenceDate-based.
+                                ['Gastos no mês', summary?.total ?? 0],
                                 ['Faturas atuais', typeBreakdown.invoicesTotal],
                                 ['Recorrentes', typeBreakdown.recurringTotal],
                                 ['Parcelamentos', typeBreakdown.installmentsTotal],
