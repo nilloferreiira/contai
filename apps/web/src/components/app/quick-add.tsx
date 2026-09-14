@@ -7,6 +7,8 @@ import { useCategories } from '@/hooks/use-categories'
 import { useMerchants } from '@/hooks/use-merchants'
 import { useCreateExpense } from '@/hooks/use-create-expense'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { ManualExpenseDialog } from '@/components/app/manual-expense-dialog'
 
 export interface QuickAddProps {
     autoFocus?: boolean
@@ -15,6 +17,7 @@ export interface QuickAddProps {
 
 export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
     const [text, setText] = useState('')
+    const [manualOpen, setManualOpen] = useState(false)
     const { data: cards = [] } = useCards()
     const { data: categories = [] } = useCategories()
     const { data: merchants = [] } = useMerchants()
@@ -37,8 +40,8 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
         return parseExpenseInput(text, { cards, categories, merchants: parserMerchants }, new Date())
     }, [text, cards, categories, parserMerchants])
 
-    function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-        if (event.key !== 'Enter' || !parsed || parsed.ambiguous || parsed.amount === null) return
+    function handleConfirm() {
+        if (!parsed || parsed.ambiguous || parsed.amount === null) return
         if (createExpense.isPending) return
 
         createExpense.mutate(
@@ -56,6 +59,13 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
             { onSuccess: () => setText('') },
         )
     }
+
+    function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+        if (event.key !== 'Enter') return
+        handleConfirm()
+    }
+
+    const canConfirm = Boolean(parsed) && !parsed?.ambiguous && parsed?.amount !== null
 
     return (
         <div data-slot="quick-add" className="rounded-3xl border border-border bg-card p-4 shadow-sm">
@@ -84,6 +94,25 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
                     )}
                 </div>
             )}
+            <div className="mt-3 flex gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 flex-1 rounded-2xl"
+                    onClick={() => setManualOpen(true)}
+                >
+                    Detalhar
+                </Button>
+                <Button
+                    type="button"
+                    className="h-12 flex-[2] rounded-2xl text-base"
+                    disabled={!canConfirm || createExpense.isPending}
+                    onClick={handleConfirm}
+                >
+                    {createExpense.isPending ? 'Salvando...' : 'Confirmar'}
+                </Button>
+            </div>
+            <ManualExpenseDialog open={manualOpen} onOpenChange={setManualOpen} />
         </div>
     )
 }

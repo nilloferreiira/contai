@@ -1,23 +1,21 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { formatBRL, monthKey, monthLabel, toISODate } from '@contai/domain'
 import { QuickAdd } from '@/components/app/quick-add'
-import { ManualExpenseDialog } from '@/components/app/manual-expense-dialog'
 import { OccurrenceList } from '@/components/app/occurrence-list'
 import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleton'
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
+import { useCategories } from '@/hooks/use-categories'
 import { useSummary } from '@/hooks/use-summary'
 
 export default function InicioPage() {
     const searchParams = useSearchParams()
     const shouldFocus = searchParams.get('focus') === 'quick-add'
     const quickAddRef = useRef<HTMLInputElement>(null)
-    const [manualOpen, setManualOpen] = useState(false)
     const [selected, setSelected] = useState<OccurrenceRow | null>(null)
 
     // autoFocus only fires on mount (e.g. navigating in from /mes). Tapping
@@ -33,11 +31,17 @@ export default function InicioPage() {
     const month = monthKey(new Date())
 
     const { data: summary, isLoading: summaryLoading } = useSummary(month)
+    const { data: categories = [] } = useCategories()
     const {
         data: todayOccurrences = [],
         isLoading: occurrencesLoading,
         isError: occurrencesError,
     } = useOccurrences({ from: today, to: today })
+
+    const categoriesById = useMemo(
+        () => Object.fromEntries(categories.map((c) => [c.id, { icon: c.icon }])),
+        [categories],
+    )
 
     return (
         <main className="flex flex-col gap-4">
@@ -53,17 +57,13 @@ export default function InicioPage() {
                 )}
             </div>
             <QuickAdd ref={quickAddRef} autoFocus={shouldFocus} />
-            <Button variant="secondary" onClick={() => setManualOpen(true)}>
-                Adicionar manualmente
-            </Button>
             <h2 className="text-lg font-medium text-foreground">Hoje</h2>
             {occurrencesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
             {occurrencesLoading ? (
                 <OccurrenceListSkeleton rows={3} showDateHeaders={false} />
             ) : (
-                <OccurrenceList occurrences={todayOccurrences} onSelect={setSelected} />
+                <OccurrenceList occurrences={todayOccurrences} onSelect={setSelected} categoriesById={categoriesById} />
             )}
-            <ManualExpenseDialog open={manualOpen} onOpenChange={setManualOpen} />
             <OccurrenceSheet occurrence={selected} onOpenChange={(open) => !open && setSelected(null)} />
         </main>
     )
