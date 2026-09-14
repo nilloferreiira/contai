@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import type { inferRouterOutputs } from '@trpc/server'
 import { useTRPC } from '@/lib/trpc/client'
-import type { OccurrenceFilters } from '@contai/api'
+import type { AppRouter, OccurrenceFilters } from '@contai/api'
+
+type RouterOutputs = inferRouterOutputs<AppRouter>
+export type OccurrenceRow = RouterOutputs['occurrences']['list'][number]
 
 export function useOccurrences(filters: OccurrenceFilters) {
     const trpc = useTRPC()
