@@ -41,8 +41,12 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
         return parseExpenseInput(text, { cards, categories, merchants: parserMerchants }, new Date())
     }, [text, cards, categories, parserMerchants])
 
-    const category = categories.find((c) => c.id === parsed?.categoryId)
+    const outrosCategory = categories.find((c) => c.name === 'Outros')
+    const categoryId = parsed?.categoryId ?? outrosCategory?.id ?? null
+    const category = categories.find((c) => c.id === categoryId)
     const card = cards.find((c) => c.id === parsed?.cardId)
+    const installmentValue =
+        parsed?.amount && parsed.installments && parsed.installments > 1 ? parsed.amount / parsed.installments : null
 
     function handleConfirm() {
         if (!parsed || parsed.ambiguous || parsed.amount === null) return
@@ -53,7 +57,7 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
                 amount: parsed.amount,
                 description: parsed.merchantName ?? text,
                 merchantName: parsed.merchantName ?? undefined,
-                categoryId: parsed.categoryId,
+                categoryId,
                 cardId: parsed.cardId,
                 purchaseDate: toISODate(parsed.purchaseDate),
                 type: parsed.installments ? 'installment' : parsed.frequency ? 'recurring' : 'single',
@@ -90,7 +94,13 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
                         <span>Não consegui identificar o valor — confirme manualmente.</span>
                     ) : (
                         <>
-                            <div className="flex flex-wrap gap-2 text-xs">
+                            <div className="flex items-baseline justify-between">
+                                <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                                    {formatBRL(parsed.amount)}
+                                </span>
+                                <span className="text-sm font-medium text-foreground">{parsed.merchantName ?? '—'}</span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
                                 <span className="rounded-full bg-card px-2 py-1">
                                     {category ? `${category.icon ?? ''} ${category.name}` : 'Sem categoria'}
                                 </span>
@@ -102,13 +112,15 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
                                     )}
                                     {card ? card.name : 'Sem cartão'}
                                 </span>
+                                {installmentValue !== null && (
+                                    <span className="rounded-full bg-card px-2 py-1">
+                                        🔢 {parsed.installments}x de {formatBRL(installmentValue)}
+                                    </span>
+                                )}
+                                {parsed.frequency && (
+                                    <span className="rounded-full bg-card px-2 py-1">🔁 Recorrente</span>
+                                )}
                             </div>
-                            <span className="mt-2 block font-display text-2xl font-semibold tracking-tight text-foreground">
-                                {formatBRL(parsed.amount)}
-                                {parsed.installments ? ` em ${parsed.installments}x` : ''}
-                                {parsed.frequency ? ' (recorrente)' : ''}
-                                {parsed.merchantName ? ` — ${parsed.merchantName}` : ''}
-                            </span>
                         </>
                     )}
                 </div>
