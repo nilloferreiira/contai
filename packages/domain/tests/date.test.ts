@@ -56,11 +56,11 @@ describe('clampDay', () => {
 })
 
 describe('monthLabel', () => {
-    it('formats a date as lowercase Portuguese month name and year', () => {
-        expect(monthLabel(new Date(2026, 8, 9))).toBe('setembro 2026')
+    it('formats a date as capitalized Portuguese month name and year', () => {
+        expect(monthLabel(new Date(2026, 8, 9))).toBe('Setembro 2026')
     })
 
     it('handles the first month of the year', () => {
-        expect(monthLabel(new Date(2026, 0, 1))).toBe('janeiro 2026')
+        expect(monthLabel(new Date(2026, 0, 1))).toBe('Janeiro 2026')
     })
 })
