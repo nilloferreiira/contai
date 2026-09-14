@@ -35,12 +35,16 @@ Each row links to that section's full file (tasks, files, interfaces, step-by-st
   Dependencies (Drizzle, Better Auth, Postgres, Tailwind, shadcn), ESLint rules, root CLAUDE.md, shadcn/ui init + tokens/fonts, QueryProvider + Toaster, vitest setup.
 - [x] **Section B: PostgreSQL & Better Auth** (Tasks 5-8) — `2026-09-09-bolso-mvp-implementation/section-b-better-auth.md`
   PostgreSQL connection + Drizzle instance, Better Auth server + JWT plugin + client, Next.js 16 proxy optimistic guard, `/login` + `/cadastro`, authenticated route guard + bottom nav shell.
-- [ ] **Section C: Database** (Task 9) — `2026-09-09-bolso-mvp-implementation/section-c-database.md`
+- [x] **Section C: Database** (Task 9) — `2026-09-09-bolso-mvp-implementation/section-c-database.md`
   Drizzle ORM schema (`src/db/schema/*`), enums, relations, indexes, and Drizzle Kit migration workflow (`drizzle.config.ts`, `pnpm drizzle-kit push`/`generate`).
-- [ ] **Section D: Domain layer** (Tasks 10-17) — `2026-09-09-bolso-mvp-implementation/section-d-domain-layer.md`
+- [x] **Section D: Domain layer** (Tasks 10-17) — `2026-09-09-bolso-mvp-implementation/section-d-domain-layer.md`
   `src/lib/finance/`: date/money, invoice, installments, recurrence, merchants, parser (2 parts), dashboard — all pure, unit-tested.
-- [ ] **Section E: API + hooks** (Tasks 18-24) — `2026-09-09-bolso-mvp-implementation/section-e-api-hooks.md`
-  `api-client.ts`/`query-keys.ts`/zod schemas, `/api/cards`, `/api/categories`, `/api/merchants`, `/api/expenses`, `/api/occurrences`, `/api/reports/summary`, plus matching React Query hooks, backed by Drizzle ORM.
+- [x] **Section E1: API (tRPC + services)** (Tasks 18-24) — `2026-09-09-bolso-mvp-implementation/section-e1-api-trpc.md`
+  `packages/api` tRPC infra, a services layer (`packages/api/src/services/`) doing the actual DB/domain orchestration, and thin `cards`/`categories`/`merchants`/`expenses`/`occurrences`/`reports` routers as `protectedProcedure`s.
+- [x] **Section E2: Web hooks** (Tasks 18-24) — `2026-09-09-bolso-mvp-implementation/section-e2-web-hooks.md`
+  tRPC client wiring (`apps/web/src/lib/trpc/`) and matching React Query hooks (`use-cards.ts`, `use-categories.ts`, `use-merchants.ts`, `use-create-expense.ts`, `use-occurrences.ts`, `use-summary.ts`) via `@trpc/tanstack-react-query`. Depends on E1's routers existing for its "Verify manually" steps.
+
+  E1/E2 together supersede the REST version previously at `section-e-api-hooks.md` and the combined tRPC doc previously at `section-e-api-trpc.md` — both never built, both deleted (see git history).
 - [ ] **Section F: UI components** (Tasks 25-31) — `2026-09-09-bolso-mvp-implementation/section-f-ui-components.md`
   Card visual/colors, quick-add, manual expense dialog + form, occurrence list/row, occurrence sheet, summary tiles + month switcher, bottom-nav full wiring.
 - [ ] **Section G: Pages** (Tasks 32-35) — `2026-09-09-bolso-mvp-implementation/section-g-pages.md`

@@ -41,7 +41,7 @@
 - Consumes: `drizzle-orm`, `postgres`, `drizzle-kit` (Task 1)
 - Produces: `user`, `session`, `account`, `verification`, `jwks`, `cards`, `categories`, `merchants`, `recurrences`, `expenses`, `installmentPlans`, `expenseInstallments` tables and relations. Every task in Section E (API routes) and Section D (domain types) imports from `@/db/schema`.
 
-- [ ] **Step 1: Write `drizzle.config.ts`**
+- [x] **Step 1: Write `drizzle.config.ts`**
 
 ```ts
 import { defineConfig } from 'drizzle-kit'
@@ -58,7 +58,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 2: Write `src/db/schema/auth.ts`**
+- [x] **Step 2: Write `src/db/schema/auth.ts`**
 
 Standard Better Auth tables with JWT key storage:
 
@@ -147,7 +147,7 @@ export const jwks = pgTable('jwks', {
 })
 ```
 
-- [ ] **Step 3: Write `src/db/schema/domain.ts`**
+- [x] **Step 3: Write `src/db/schema/domain.ts`**
 
 Domain entities matching the finance domain model:
 
@@ -371,21 +371,21 @@ export const expenseInstallmentsRelations = relations(expenseInstallments, ({ on
 }))
 ```
 
-- [ ] **Step 4: Write `src/db/schema/index.ts`**
+- [x] **Step 4: Write `src/db/schema/index.ts`**
 
 ```ts
 export * from './auth'
 export * from './domain'
 ```
 
-- [ ] **Step 5: Generate & Push Migrations**
+- [x] **Step 5: Generate & Push Migrations**
 
 ```bash
 pnpm drizzle-kit generate
 pnpm drizzle-kit push
 ```
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 ```bash
 pnpm drizzle-kit check
@@ -393,7 +393,7 @@ pnpm drizzle-kit check
 
 Confirm all tables and enums match the schema and PostgreSQL has created the tables with correct indexes and constraints.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add drizzle.config.ts src/db/schema
