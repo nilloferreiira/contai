@@ -7,6 +7,16 @@ import { env } from './env'
 export const auth = betterAuth({
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins:
+        process.env.NODE_ENV === 'production'
+            ? undefined
+            : async (request) => {
+                  // Dev-only: trust whatever Host the request arrived on (e.g. a LAN IP
+                  // when testing from a phone), in addition to BETTER_AUTH_URL. Never
+                  // enabled in production.
+                  const host = request?.headers.get('host')
+                  return host ? [`http://${host}`, `https://${host}`] : []
+              },
     database: drizzleAdapter(db, {
         provider: 'pg',
         schema: { user, session, account, verification, jwks },
