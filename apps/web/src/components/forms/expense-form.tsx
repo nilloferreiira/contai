@@ -2,8 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { toISODate } from '@contai/domain'
-import { createExpenseInputSchema, type CreateExpenseInput } from '@contai/api'
+import { createExpenseInputSchema, toISODate, type CreateExpenseInput } from '@contai/domain'
 import { useCreateExpense } from '@/hooks/use-create-expense'
 import { useCards } from '@/hooks/use-cards'
 import { useCategories } from '@/hooks/use-categories'
