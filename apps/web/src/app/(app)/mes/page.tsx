@@ -97,7 +97,7 @@ export default function MesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
             />
-            <div className="flex gap-2">
+            <div className="grid grid-cols-4 gap-2">
                 <Select
                     value={categoryFilter ?? 'all'}
                     onValueChange={(v) => setCategoryFilter(v === 'all' ? undefined : v)}
