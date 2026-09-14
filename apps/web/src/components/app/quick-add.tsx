@@ -9,6 +9,7 @@ import { useCreateExpense } from '@/hooks/use-create-expense'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ManualExpenseDialog } from '@/components/app/manual-expense-dialog'
+import { CardVisual } from '@/components/app/card-visual'
 
 export interface QuickAddProps {
     autoFocus?: boolean
@@ -39,6 +40,9 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
         if (!text.trim()) return null
         return parseExpenseInput(text, { cards, categories, merchants: parserMerchants }, new Date())
     }, [text, cards, categories, parserMerchants])
+
+    const category = categories.find((c) => c.id === parsed?.categoryId)
+    const card = cards.find((c) => c.id === parsed?.cardId)
 
     function handleConfirm() {
         if (!parsed || parsed.ambiguous || parsed.amount === null) return
@@ -85,12 +89,27 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
                     {parsed.ambiguous || parsed.amount === null ? (
                         <span>Não consegui identificar o valor — confirme manualmente.</span>
                     ) : (
-                        <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                            {formatBRL(parsed.amount)}
-                            {parsed.installments ? ` em ${parsed.installments}x` : ''}
-                            {parsed.frequency ? ' (recorrente)' : ''}
-                            {parsed.merchantName ? ` — ${parsed.merchantName}` : ''}
-                        </span>
+                        <>
+                            <div className="flex flex-wrap gap-2 text-xs">
+                                <span className="rounded-full bg-card px-2 py-1">
+                                    {category ? `${category.icon ?? ''} ${category.name}` : 'Sem categoria'}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2 py-1">
+                                    {card ? (
+                                        <CardVisual color={card.color} size="xs" />
+                                    ) : (
+                                        <span className="h-4 w-6 rounded-[4px] border border-dashed border-muted-foreground/50" />
+                                    )}
+                                    {card ? card.name : 'Sem cartão'}
+                                </span>
+                            </div>
+                            <span className="mt-2 block font-display text-2xl font-semibold tracking-tight text-foreground">
+                                {formatBRL(parsed.amount)}
+                                {parsed.installments ? ` em ${parsed.installments}x` : ''}
+                                {parsed.frequency ? ' (recorrente)' : ''}
+                                {parsed.merchantName ? ` — ${parsed.merchantName}` : ''}
+                            </span>
+                        </>
                     )}
                 </div>
             )}
