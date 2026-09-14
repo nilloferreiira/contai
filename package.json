@@ -10,7 +10,7 @@
     "test": "turbo run test",
     "db:generate": "pnpm --filter @contai/db exec drizzle-kit generate",
     "db:migrate": "pnpm --filter @contai/db exec drizzle-kit migrate",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx --env-file=apps/web/.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@contai/db": "workspace:*",
