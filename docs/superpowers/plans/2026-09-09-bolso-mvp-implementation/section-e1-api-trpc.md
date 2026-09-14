@@ -60,13 +60,13 @@ for business logic (installments/recurrence/invoice/merchant-normalization/dashb
 - Consumes: `auth` from `packages/api/src/auth.ts`; `db` from `@contai/db`.
 - Produces: `router`, `publicProcedure`, `protectedProcedure`, `mapServiceError` (from `trpc.ts`); `createContext` + `type Context` (from `context.ts`); `ServiceError` (from `services/errors.ts`); `type Database` (from `services/types.ts`); `appRouter` + `type AppRouter` (from `routers/_app.ts`, empty until Tasks 19-24 fill it in); `getServerCaller()` (RSC helper) — consumed by every task below and by `section-e2-web-hooks.md`.
 
-- [ ] **Step 1: Add tRPC dependencies**
+- [x] **Step 1: Add tRPC dependencies**
 
 `packages/api/package.json` — add to `dependencies`: `"@trpc/server": "^11"`, `"@contai/domain": "workspace:*"`, `"zod": "^4"`.
 
 `apps/web/package.json` — add to `dependencies`: `"@trpc/server": "^11"` (needed by the fetch-adapter route handler below; the client-side `@trpc/client`/`@trpc/tanstack-react-query` deps are added in `section-e2-web-hooks.md` Task 18).
 
-- [ ] **Step 2: Write `packages/api/src/context.ts`**
+- [x] **Step 2: Write `packages/api/src/context.ts`**
 
 ```ts
 import { db } from '@contai/db'
@@ -80,7 +80,7 @@ export async function createContext({ headers }: { headers: Headers }) {
 export type Context = Awaited<ReturnType<typeof createContext>>
 ```
 
-- [ ] **Step 3: Write `packages/api/src/services/types.ts`**
+- [x] **Step 3: Write `packages/api/src/services/types.ts`**
 
 ```ts
 import type { db } from '@contai/db'
@@ -88,7 +88,7 @@ import type { db } from '@contai/db'
 export type Database = typeof db
 ```
 
-- [ ] **Step 4: Write `packages/api/src/services/errors.ts`**
+- [x] **Step 4: Write `packages/api/src/services/errors.ts`**
 
 ```ts
 export class ServiceError extends Error {
@@ -101,7 +101,7 @@ export class ServiceError extends Error {
 }
 ```
 
-- [ ] **Step 5: Write `packages/api/src/trpc.ts`**
+- [x] **Step 5: Write `packages/api/src/trpc.ts`**
 
 ```ts
 import { initTRPC, TRPCError } from '@trpc/server'
@@ -132,7 +132,7 @@ export function mapServiceError(error: unknown): never {
 }
 ```
 
-- [ ] **Step 6: Write `packages/api/src/routers/_app.ts`** (empty shell — filled in by Tasks 19-24)
+- [x] **Step 6: Write `packages/api/src/routers/_app.ts`** (empty shell — filled in by Tasks 19-24)
 
 ```ts
 import { router } from '../trpc'
@@ -142,7 +142,7 @@ export const appRouter = router({})
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 7: Update `packages/api/src/index.ts`**
+- [x] **Step 7: Update `packages/api/src/index.ts`**
 
 ```ts
 export { auth } from './auth'
@@ -153,7 +153,7 @@ export { appRouter } from './routers/_app'
 export type { AppRouter } from './routers/_app'
 ```
 
-- [ ] **Step 8: Write `apps/web/src/app/api/trpc/[trpc]/route.ts`**
+- [x] **Step 8: Write `apps/web/src/app/api/trpc/[trpc]/route.ts`**
 
 ```ts
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
@@ -171,7 +171,7 @@ function handler(request: Request) {
 export { handler as GET, handler as POST }
 ```
 
-- [ ] **Step 9: Write `apps/web/src/lib/trpc/server.ts`** (RSC caller — no HTTP round trip)
+- [x] **Step 9: Write `apps/web/src/lib/trpc/server.ts`** (RSC caller — no HTTP round trip)
 
 ```ts
 import 'server-only'
@@ -184,7 +184,7 @@ export async function getServerCaller() {
 }
 ```
 
-- [ ] **Step 10: Write/refresh `packages/api/CLAUDE.md`**
+- [x] **Step 10: Write/refresh `packages/api/CLAUDE.md`**
 
 ```markdown
 # packages/api
@@ -207,7 +207,7 @@ Better Auth server instance (`auth.ts`) + the tRPC API layer.
 A future RN client should only ever import `AppRouter`'s **type** (`import type { AppRouter }`) — type-only imports are erased at compile time and prevent Metro from resolving `@contai/db`'s Node builtins transitively.
 ```
 
-- [ ] **Step 11: Verify**
+- [x] **Step 11: Verify**
 
 ```bash
 pnpm install
@@ -217,7 +217,7 @@ pnpm --filter web typecheck
 
 Expected: succeeds with an (empty) tRPC router mounted; no procedures exist yet so there's nothing to call.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add -A
@@ -236,7 +236,7 @@ git commit -m "feat: add tRPC infra (context, protectedProcedure, services/error
 - Consumes: `Database` (Task 18); `cards` table from `@contai/db`; `ServiceError`, `protectedProcedure`, `router`, `mapServiceError` (Task 18).
 - Produces: `cardInputSchema`/`CardInput`, `updateCardInputSchema`/`UpdateCardInput`, `listCards`/`createCard`/`updateCard`/`deleteCard` (service); `cardsRouter` merged into `appRouter` as `cards` — consumed by `section-e2-web-hooks.md` Task 19.
 
-- [ ] **Step 1: Write `packages/api/src/services/cards-service.ts`**
+- [x] **Step 1: Write `packages/api/src/services/cards-service.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -308,7 +308,7 @@ export async function deleteCard(db: Database, userId: string, id: string) {
 }
 ```
 
-- [ ] **Step 2: Write `packages/api/src/routers/cards.ts`**
+- [x] **Step 2: Write `packages/api/src/routers/cards.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -332,7 +332,7 @@ export const cardsRouter = router({
 })
 ```
 
-- [ ] **Step 3: Merge into `appRouter`**
+- [x] **Step 3: Merge into `appRouter`**
 
 Edit `packages/api/src/routers/_app.ts`:
 
@@ -347,7 +347,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 pnpm --filter @contai/api typecheck
@@ -355,7 +355,7 @@ pnpm --filter @contai/api typecheck
 
 Full end-to-end verification (calling `cards.create`/`cards.list` through the client) happens in `section-e2-web-hooks.md` Task 19, once `useCards()`/`useCreateCard()` exist.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -374,7 +374,7 @@ git commit -m "feat: add cards service and tRPC router"
 - Consumes: `Database`, `ServiceError`, `protectedProcedure`, `router`, `mapServiceError` (Task 18); `categories` table from `@contai/db`.
 - Produces: `categoryInputSchema`/`CategoryInput`, `listCategories`/`createCategory`/`updateCategory`/`deleteCategory` (service); `categoriesRouter` merged as `categories` — consumed by `section-e2-web-hooks.md` Task 20.
 
-- [ ] **Step 1: Write `packages/api/src/services/categories-service.ts`**
+- [x] **Step 1: Write `packages/api/src/services/categories-service.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -449,7 +449,7 @@ export async function deleteCategory(db: Database, userId: string, id: string) {
 }
 ```
 
-- [ ] **Step 2: Write `packages/api/src/routers/categories.ts`**
+- [x] **Step 2: Write `packages/api/src/routers/categories.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -480,7 +480,7 @@ export const categoriesRouter = router({
 })
 ```
 
-- [ ] **Step 3: Merge into `appRouter`**
+- [x] **Step 3: Merge into `appRouter`**
 
 ```ts
 import { router } from '../trpc'
@@ -495,13 +495,13 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 pnpm --filter @contai/api typecheck
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -520,7 +520,7 @@ git commit -m "feat: add categories service and tRPC router with idempotent defa
 - Consumes: `Database`, `protectedProcedure`, `router` (Task 18); `merchants` table from `@contai/db`.
 - Produces: `listMerchants` (service); `merchantsRouter` merged as `merchants` — consumed by `section-e2-web-hooks.md` Task 21.
 
-- [ ] **Step 1: Write `packages/api/src/services/merchants-service.ts`**
+- [x] **Step 1: Write `packages/api/src/services/merchants-service.ts`**
 
 ```ts
 import { and, desc, eq, isNull } from 'drizzle-orm'
@@ -536,7 +536,7 @@ export function listMerchants(db: Database, userId: string) {
 }
 ```
 
-- [ ] **Step 2: Write `packages/api/src/routers/merchants.ts`**
+- [x] **Step 2: Write `packages/api/src/routers/merchants.ts`**
 
 ```ts
 import { protectedProcedure, router } from '../trpc'
@@ -547,7 +547,7 @@ export const merchantsRouter = router({
 })
 ```
 
-- [ ] **Step 3: Merge into `appRouter`**
+- [x] **Step 3: Merge into `appRouter`**
 
 ```ts
 import { router } from '../trpc'
@@ -564,13 +564,13 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 pnpm --filter @contai/api typecheck
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -589,7 +589,7 @@ git commit -m "feat: add merchants service and tRPC router"
 - Consumes: `Database` (Task 18); `cards`, `expenses`, `expenseInstallments`, `installmentPlans`, `merchants`, `recurrences` from `@contai/db`; `generateInstallments`, `generateRecurrenceOccurrences`, `getInvoiceForExpense`, `normalizeMerchantName`, `toISODate`, `type CardCycle` from `@contai/domain`.
 - Produces: `createExpenseInputSchema`/`CreateExpenseInput`, `createExpense(db, userId, input)` (the full transaction, ties invoice/installments/recurrence together); `expensesRouter` merged as `expenses` — consumed by `section-e2-web-hooks.md` Task 22.
 
-- [ ] **Step 1: Write `packages/api/src/services/expenses-service.ts`**
+- [x] **Step 1: Write `packages/api/src/services/expenses-service.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -791,7 +791,7 @@ Note: this function is a verbatim move of what the earlier combined tRPC doc wro
 as `expenses.create`'s procedure body — only the signature changed, from `(ctx, input)`
 to `(db, userId, input)`, so it no longer depends on tRPC's `ctx` shape.
 
-- [ ] **Step 2: Write `packages/api/src/routers/expenses.ts`**
+- [x] **Step 2: Write `packages/api/src/routers/expenses.ts`**
 
 ```ts
 import { protectedProcedure, router } from '../trpc'
@@ -804,7 +804,7 @@ export const expensesRouter = router({
 })
 ```
 
-- [ ] **Step 3: Merge into `appRouter`**
+- [x] **Step 3: Merge into `appRouter`**
 
 ```ts
 import { router } from '../trpc'
@@ -823,13 +823,13 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 pnpm --filter @contai/api typecheck
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -848,7 +848,7 @@ git commit -m "feat: add expenses service tying invoice/installments/recurrence 
 - Consumes: `Database`, `ServiceError`, `protectedProcedure`, `router`, `mapServiceError` (Task 18); `expenseInstallments` from `@contai/db`.
 - Produces: `occurrenceFiltersSchema`/`OccurrenceFilters`, `listOccurrences`/`updateOccurrence`/`deleteOccurrence` (service); `occurrencesRouter` merged as `occurrences` — consumed by `section-e2-web-hooks.md` Task 23.
 
-- [ ] **Step 1: Write `packages/api/src/services/occurrences-service.ts`**
+- [x] **Step 1: Write `packages/api/src/services/occurrences-service.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -978,7 +978,7 @@ Note: `scopedConditions` (throwing `ServiceError('INVALID_SCOPE', ...)`) and
 and `deleteOccurrence` — same behavior as the earlier combined doc, now factored into the
 service instead of duplicated across router handlers.
 
-- [ ] **Step 2: Write `packages/api/src/routers/occurrences.ts`**
+- [x] **Step 2: Write `packages/api/src/routers/occurrences.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -1009,7 +1009,7 @@ export const occurrencesRouter = router({
 })
 ```
 
-- [ ] **Step 3: Merge into `appRouter`**
+- [x] **Step 3: Merge into `appRouter`**
 
 ```ts
 import { router } from '../trpc'
@@ -1030,13 +1030,13 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 pnpm --filter @contai/api typecheck
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -1055,7 +1055,7 @@ git commit -m "feat: add occurrences service with scoped soft-delete/edit"
 - Consumes: `Database` (Task 18); `expenseInstallments` from `@contai/db`; `summarizeMonth` from `@contai/domain`.
 - Produces: `getMonthSummary(db, userId, month)` (service); `reportsRouter` merged as `reports` — consumed by `section-e2-web-hooks.md` Task 24.
 
-- [ ] **Step 1: Write `packages/api/src/services/reports-service.ts`**
+- [x] **Step 1: Write `packages/api/src/services/reports-service.ts`**
 
 ```ts
 import { and, eq, isNull } from 'drizzle-orm'
@@ -1085,7 +1085,7 @@ export async function getMonthSummary(db: Database, userId: string, month: strin
 }
 ```
 
-- [ ] **Step 2: Write `packages/api/src/routers/reports.ts`**
+- [x] **Step 2: Write `packages/api/src/routers/reports.ts`**
 
 ```ts
 import { z } from 'zod'
@@ -1099,7 +1099,7 @@ export const reportsRouter = router({
 })
 ```
 
-- [ ] **Step 3: Final merge into `appRouter`**
+- [x] **Step 3: Final merge into `appRouter`**
 
 ```ts
 import { router } from '../trpc'
@@ -1122,7 +1122,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 pnpm turbo run typecheck lint test
@@ -1133,7 +1133,7 @@ verification of every procedure happens in `section-e2-web-hooks.md` once its ho
 — see that doc's Tasks 19-24 for the per-resource manual test steps and its Task 24 Step 5
 for the combined `pnpm --filter web build` check.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A

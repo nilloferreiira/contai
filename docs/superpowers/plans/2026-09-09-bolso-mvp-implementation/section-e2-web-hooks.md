@@ -47,7 +47,7 @@ already reference (`useCards()`, `useCreateExpense()`, etc.).
 - Consumes: `type AppRouter` from `@contai/api` (`section-e1-api-trpc.md` Task 18).
 - Produces: `useTRPC()` + `TRPCProvider` (`client.ts`), `TRPCReactProvider` (`provider.tsx`) — consumed by every hook task below.
 
-- [ ] **Step 1: Add tRPC client dependencies**
+- [x] **Step 1: Add tRPC client dependencies**
 
 `apps/web/package.json` — add to `dependencies`: `"@trpc/client": "^11"`, `"@trpc/tanstack-react-query": "^11"`, `"superjson": "^2"` (must match the version `packages/api` uses — check `packages/api/package.json`).
 
@@ -59,7 +59,7 @@ strings over the HTTP fetch-adapter route while `AppRouter`'s inferred types sti
 claimed `Date`. The client link below MUST configure the same transformer, or every
 response will fail to deserialize those fields correctly.
 
-- [ ] **Step 2: Write `apps/web/src/lib/trpc/client.ts`**
+- [x] **Step 2: Write `apps/web/src/lib/trpc/client.ts`**
 
 ```ts
 'use client'
@@ -70,7 +70,7 @@ import type { AppRouter } from '@contai/api'
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>()
 ```
 
-- [ ] **Step 3: Write `apps/web/src/lib/trpc/provider.tsx`**
+- [x] **Step 3: Write `apps/web/src/lib/trpc/provider.tsx`**
 
 ```tsx
 'use client'
@@ -98,7 +98,7 @@ export function TRPCReactProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 4: Wire `TRPCReactProvider` inside `QueryProvider`**
+- [x] **Step 4: Wire `TRPCReactProvider` inside `QueryProvider`**
 
 Edit `apps/web/src/providers/query-provider.tsx`:
 
@@ -122,7 +122,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 pnpm install
@@ -133,7 +133,7 @@ pnpm --filter web dev
 Expected: app boots with the Provider mounted. There are no hooks yet to exercise — the
 first real call happens in Task 19.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -151,7 +151,7 @@ git commit -m "feat: add tRPC client Provider wired into QueryProvider"
 - Consumes: `useTRPC` (Task 18); `cards` router (`section-e1-api-trpc.md` Task 19).
 - Produces: `useCards()`, `useCreateCard()`, `useUpdateCard()`, `useDeleteCard()` — consumed by Section F Task 27 (card form) and Section G Task 35 (`/ajustes`).
 
-- [ ] **Step 1: Write `apps/web/src/hooks/use-cards.ts`**
+- [x] **Step 1: Write `apps/web/src/hooks/use-cards.ts`**
 
 ```ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -208,7 +208,7 @@ export function useDeleteCard() {
 
 `useUpdateCard()` takes `{ id, data }` (matching the router's `input`). `useCreateCard().mutate(values)` matches `cardInputSchema` directly (camelCase `closingDay`/`dueDay`/`creditLimit`) — Section F's card form should use these field names directly.
 
-- [ ] **Step 2: Write `apps/web/src/hooks/CLAUDE.md`**
+- [x] **Step 2: Write `apps/web/src/hooks/CLAUDE.md`**
 
 ```markdown
 # src/hooks
@@ -220,7 +220,7 @@ invalidates the resource's `queryKey()` on success and toasts via `sonner`. Neve
 `fetch` directly here — always go through `useTRPC()`.
 ```
 
-- [ ] **Step 3: Verify manually**
+- [x] **Step 3: Verify manually**
 
 ```bash
 pnpm dev
@@ -228,7 +228,7 @@ pnpm dev
 
 Log in via the browser. In a scratch client component, call `useCreateCard().mutate({ name: 'Nubank', closingDay: 10, dueDay: 20, color: '#8A2BE2' })` and confirm a row appears via `useCards()`. Confirm an unauthenticated request to `/api/trpc/cards.list` (no session cookie) returns a tRPC `UNAUTHORIZED` error, not data.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A
@@ -246,7 +246,7 @@ git commit -m "feat: add cards hooks"
 - Consumes: `useTRPC` (Task 18); `categories` router (`section-e1-api-trpc.md` Task 20).
 - Produces: `useCategories()`, `useCreateCategory()`, `useUpdateCategory()`, `useDeleteCategory()` — consumed by Section F Task 26 (quick-add/parser context) and Section G Task 35 (`/ajustes`).
 
-- [ ] **Step 1: Write `apps/web/src/hooks/use-categories.ts`**
+- [x] **Step 1: Write `apps/web/src/hooks/use-categories.ts`**
 
 `@trpc/tanstack-react-query`'s `queryOptions()` already dedupes concurrent identical requests through TanStack Query's own request deduplication (same `queryKey` in flight only fires once) — no hand-rolled single-flight guard needed.
 
@@ -303,7 +303,7 @@ export function useDeleteCategory() {
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [x] **Step 2: Verify manually**
 
 ```bash
 pnpm dev
@@ -311,7 +311,7 @@ pnpm dev
 
 Call `useCategories()` twice in a row (e.g. two mounted components, or refetch) and confirm the 7 defaults seed once with no `categories_user_name_unique` violation (check via `pnpm --filter @contai/db exec drizzle-kit studio` if needed).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -329,7 +329,7 @@ git commit -m "feat: add categories hooks"
 - Consumes: `useTRPC` (Task 18); `merchants` router (`section-e1-api-trpc.md` Task 21).
 - Produces: `useMerchants()` returning merchants ordered by `usageCount` desc — consumed by Section F Task 16/26 (`ParserContext` wiring inside `quick-add.tsx`).
 
-- [ ] **Step 1: Write `apps/web/src/hooks/use-merchants.ts`**
+- [x] **Step 1: Write `apps/web/src/hooks/use-merchants.ts`**
 
 ```ts
 import { useQuery } from '@tanstack/react-query'
@@ -341,7 +341,7 @@ export function useMerchants() {
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [x] **Step 2: Verify manually**
 
 ```bash
 pnpm dev
@@ -349,7 +349,7 @@ pnpm dev
 
 Confirm `useMerchants()` returns `[]` for a fresh user with no 500/`UNAUTHORIZED` surprises.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -367,7 +367,7 @@ git commit -m "feat: add merchants hook"
 - Consumes: `useTRPC` (Task 18); `expenses` router (`section-e1-api-trpc.md` Task 22).
 - Produces: `useCreateExpense()` — consumed by Section F Task 26 (quick-add) and Task 27 (manual dialog).
 
-- [ ] **Step 1: Write `apps/web/src/hooks/use-create-expense.ts`**
+- [x] **Step 1: Write `apps/web/src/hooks/use-create-expense.ts`**
 
 ```ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -409,7 +409,7 @@ a plain `'YYYY-MM-DD'` string — e.g. from a date picker, format with the calen
 never `new Date().toISOString()` or similar, which would send a full timestamp and fail the
 schema.
 
-- [ ] **Step 2: Verify manually**
+- [x] **Step 2: Verify manually**
 
 ```bash
 pnpm dev
@@ -417,7 +417,7 @@ pnpm dev
 
 Test all three branches: single (`{ amount: 50, description: 'mercado', purchaseDate: '2026-09-09', type: 'single' }` → 1 occurrence row), installment (same + `type: 'installment', installments: 3` → 3 rows, `installmentNumber` 1-3, `occurrenceDate`s one calendar month apart), recurring (`type: 'recurring', frequency: 'monthly'` → 12 rows one month apart, including the start date).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -436,7 +436,7 @@ git commit -m "feat: add create-expense hook"
 - Consumes: `useTRPC` (Task 18); `occurrences` router (`section-e1-api-trpc.md` Task 23).
 - Produces: `useOccurrences(filters)`, `useUpdateOccurrence()`, `useDeleteOccurrence()` — consumed by Section F Task 28 (`occurrence-list.tsx`) and Task 29 (`occurrence-sheet.tsx`).
 
-- [ ] **Step 1: Write `apps/web/src/hooks/use-occurrences.ts`**
+- [x] **Step 1: Write `apps/web/src/hooks/use-occurrences.ts`**
 
 ```ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -487,7 +487,7 @@ hooks reference `trpc.reports.summary` (Task 24) — same deferred-typecheck not
 applies; omit the `reports.summary` invalidation line until Task 24 lands if working
 task-by-task, then add it back.
 
-- [ ] **Step 2: Add the deferred `occurrences.list` invalidation to `use-create-expense.ts`**
+- [x] **Step 2: Add the deferred `occurrences.list` invalidation to `use-create-expense.ts`**
 
 Edit `apps/web/src/hooks/use-create-expense.ts`, adding the line noted in Task 22 Step 1:
 
@@ -495,7 +495,7 @@ Edit `apps/web/src/hooks/use-create-expense.ts`, adding the line noted in Task 2
                 queryClient.invalidateQueries({ queryKey: trpc.occurrences.list.queryKey() })
 ```
 
-- [ ] **Step 3: Verify manually**
+- [x] **Step 3: Verify manually**
 
 ```bash
 pnpm dev
@@ -503,7 +503,7 @@ pnpm dev
 
 Reuse the installment expense from Task 22's verification. `useOccurrences({ status: 'pending' })` → confirm all 3 rows. `useUpdateOccurrence().mutate({ id: <2nd occurrence id>, scope: 'future', data: { status: 'paid' } })` → confirm installments 2 and 3 flip to paid, installment 1 stays pending. `useDeleteOccurrence().mutate({ id: <2nd occurrence id>, scope: 'occurrence' })` → confirm it disappears from `useOccurrences()`, but the row still exists in `expense_installments` with `deletedAt` set (soft delete, confirm via `drizzle-kit studio`).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A
@@ -522,7 +522,7 @@ git commit -m "feat: add occurrences hooks"
 - Consumes: `useTRPC` (Task 18); `reports` router (`section-e1-api-trpc.md` Task 24).
 - Produces: `useSummary(month)` — consumed by Section G Task 32 (`/inicio`) and Task 34 (`/relatorios`).
 
-- [ ] **Step 1: Write `apps/web/src/hooks/use-summary.ts`**
+- [x] **Step 1: Write `apps/web/src/hooks/use-summary.ts`**
 
 ```ts
 import { useQuery } from '@tanstack/react-query'
@@ -534,11 +534,11 @@ export function useSummary(month: string) {
 }
 ```
 
-- [ ] **Step 2: Fill in the deferred `reports.summary` invalidations**
+- [x] **Step 2: Fill in the deferred `reports.summary` invalidations**
 
 Edit `apps/web/src/hooks/use-create-expense.ts` and `apps/web/src/hooks/use-occurrences.ts` to add/uncomment the `queryClient.invalidateQueries({ queryKey: trpc.reports.summary.queryKey() })` lines noted in Tasks 22-23.
 
-- [ ] **Step 3: Verify manually**
+- [x] **Step 3: Verify manually**
 
 ```bash
 pnpm dev
@@ -548,7 +548,7 @@ pnpm dev
 
 Run the full battery once all of Tasks 18-24 in both `section-e1-api-trpc.md` and this doc are done: `pnpm turbo run typecheck lint test && pnpm --filter web build`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A
