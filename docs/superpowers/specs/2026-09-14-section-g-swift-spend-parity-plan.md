@@ -69,7 +69,7 @@ standalone reading.)
 
 ---
 
-### Task R1: `@contai/domain` — month label + reporting/forecast pure functions
+### Task 1 (R1): `@contai/domain` — month label + reporting/forecast pure functions
 
 **Files:**
 - Edit: `packages/domain/src/date.ts`
@@ -301,7 +301,7 @@ git commit -m "feat: add reporting/forecast pure functions to @contai/domain"
 
 ---
 
-### Task R2: shared `OccurrenceListSkeleton` component
+### Task 2 (R2): shared `OccurrenceListSkeleton` component
 
 **Files:**
 - Create: `apps/web/src/components/app/occurrence-list-skeleton.tsx`
@@ -353,7 +353,7 @@ git commit -m "feat: add shared OccurrenceListSkeleton loading placeholder"
 
 ---
 
-### Task R3: `/inicio` rework
+### Task 3 (R3): `/inicio` rework
 
 **Files:**
 - Edit: `apps/web/src/app/(app)/inicio/page.tsx`
@@ -400,7 +400,7 @@ git commit -m "feat: add loading skeletons and month-total label to /inicio"
 
 ---
 
-### Task R4: `/mes` rework
+### Task 4 (R4): `/mes` rework
 
 **Files:**
 - Edit: `apps/web/src/app/(app)/mes/page.tsx`
@@ -460,7 +460,7 @@ git commit -m "feat: add month total, type filter, and skeletons to /mes"
 
 ---
 
-### Task R5: `/relatorios` rework
+### Task 5 (R5): `/relatorios` rework
 
 **Files:**
 - Edit: `apps/web/src/app/(app)/relatorios/page.tsx`
@@ -564,7 +564,7 @@ otherwise; don't force an empty addition.)
 
 ---
 
-### Task R6: `/ajustes` rework
+### Task 6 (R6): `/ajustes` rework
 
 **Files:**
 - Edit: `apps/web/src/app/(app)/ajustes/page.tsx`
