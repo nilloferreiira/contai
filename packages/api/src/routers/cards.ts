@@ -10,10 +10,10 @@ export const cardsRouter = router({
         .mutation(({ ctx, input }) => createCard(ctx.db, ctx.userId, input)),
 
     update: protectedProcedure
-        .input(z.object({ id: z.string().uuid(), data: updateCardInputSchema }))
+        .input(z.object({ id: z.uuid(), data: updateCardInputSchema }))
         .mutation(({ ctx, input }) => updateCard(ctx.db, ctx.userId, input.id, input.data).catch(mapServiceError)),
 
     delete: protectedProcedure
-        .input(z.object({ id: z.string().uuid() }))
+        .input(z.object({ id: z.uuid() }))
         .mutation(({ ctx, input }) => deleteCard(ctx.db, ctx.userId, input.id).catch(mapServiceError)),
 })

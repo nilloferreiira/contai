@@ -8,8 +8,8 @@ export const occurrenceFiltersSchema = z.object({
     from: z.string().optional(),
     to: z.string().optional(),
     q: z.string().optional(),
-    categoryId: z.string().uuid().optional(),
-    cardId: z.string().uuid().optional(),
+    categoryId: z.uuid().optional(),
+    cardId: z.uuid().optional(),
     status: z.enum(['pending', 'paid', 'cancelled']).optional(),
 })
 export type OccurrenceFilters = z.infer<typeof occurrenceFiltersSchema>
@@ -18,8 +18,8 @@ export const occurrencePatchSchema = z.object({
     status: z.enum(['pending', 'paid', 'cancelled']).optional(),
     amount: z.number().positive().optional(),
     description: z.string().min(1).max(120).optional(),
-    categoryId: z.string().uuid().nullable().optional(),
-    cardId: z.string().uuid().nullable().optional(),
+    categoryId: z.uuid().nullable().optional(),
+    cardId: z.uuid().nullable().optional(),
 })
 export type OccurrencePatch = z.infer<typeof occurrencePatchSchema>
 

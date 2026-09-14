@@ -17,10 +17,10 @@ export const categoriesRouter = router({
         .mutation(({ ctx, input }) => createCategory(ctx.db, ctx.userId, input).catch(mapServiceError)),
 
     update: protectedProcedure
-        .input(z.object({ id: z.string().uuid(), data: updateCategoryInputSchema }))
+        .input(z.object({ id: z.uuid(), data: updateCategoryInputSchema }))
         .mutation(({ ctx, input }) => updateCategory(ctx.db, ctx.userId, input.id, input.data).catch(mapServiceError)),
 
     delete: protectedProcedure
-        .input(z.object({ id: z.string().uuid() }))
+        .input(z.object({ id: z.uuid() }))
         .mutation(({ ctx, input }) => deleteCategory(ctx.db, ctx.userId, input.id).catch(mapServiceError)),
 })
