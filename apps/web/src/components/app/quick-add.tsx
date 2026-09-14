@@ -143,7 +143,12 @@ export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
                     {createExpense.isPending ? 'Salvando...' : 'Confirmar'}
                 </Button>
             </div>
-            <ManualExpenseDialog open={manualOpen} onOpenChange={setManualOpen} />
+            <ManualExpenseDialog
+                open={manualOpen}
+                onOpenChange={setManualOpen}
+                initial={parsed}
+                onSaved={() => setText('')}
+            />
         </div>
     )
 }
