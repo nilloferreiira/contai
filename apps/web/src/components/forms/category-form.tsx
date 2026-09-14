@@ -23,7 +23,7 @@ export function CategoryForm({ id, defaultValues, onSuccess }: CategoryFormProps
         formState: { errors },
     } = useForm<CategoryInput>({
         resolver: zodResolver(categoryInputSchema),
-        defaultValues: { name: '', ...defaultValues },
+        defaultValues: { name: '', icon: '📦', ...defaultValues },
     })
 
     function onSubmit(values: CategoryInput) {
@@ -35,14 +35,28 @@ export function CategoryForm({ id, defaultValues, onSuccess }: CategoryFormProps
     }
 
     return (
-        <form data-slot="category-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-                <label htmlFor="name">Nome</label>
-                <Input id="name" {...register('name')} />
-                {errors.name && <span className="text-sm text-destructive">{errors.name.message}</span>}
+        <form
+            data-slot="category-form"
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4"
+        >
+            <div className="grid grid-cols-[70px_1fr] gap-2">
+                <div className="flex flex-col gap-1">
+                    <label htmlFor="icon">Ícone</label>
+                    <Input id="icon" {...register('icon')} />
+                </div>
+                <div className="flex flex-col gap-1">
+                    <label htmlFor="name">Nome</label>
+                    <Input id="name" {...register('name')} />
+                    {errors.name && <span className="text-sm text-destructive">{errors.name.message}</span>}
+                </div>
             </div>
-            <Button type="submit" disabled={createCategory.isPending || updateCategory.isPending}>
-                Salvar
+            <Button
+                type="submit"
+                className="h-11 w-full rounded-2xl"
+                disabled={createCategory.isPending || updateCategory.isPending}
+            >
+                {id ? 'Salvar' : 'Adicionar categoria'}
             </Button>
         </form>
     )

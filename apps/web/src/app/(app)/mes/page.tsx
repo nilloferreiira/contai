@@ -39,6 +39,10 @@ export default function MesPage() {
 
     const { data: categories = [] } = useCategories()
     const { data: cards = [] } = useCards()
+    const categoriesById = useMemo(
+        () => Object.fromEntries(categories.map((c) => [c.id, { icon: c.icon }])),
+        [categories],
+    )
     const { from, to } = monthRange(month)
     const {
         data: occurrences = [],
@@ -156,7 +160,7 @@ export default function MesPage() {
             {occurrencesLoading ? (
                 <OccurrenceListSkeleton rows={6} />
             ) : (
-                <OccurrenceList occurrences={filtered} showDateHeaders onSelect={setSelected} />
+                <OccurrenceList occurrences={filtered} showDateHeaders onSelect={setSelected} categoriesById={categoriesById} />
             )}
             <OccurrenceSheet occurrence={selected} onOpenChange={(open) => !open && setSelected(null)} />
         </main>

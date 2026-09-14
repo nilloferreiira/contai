@@ -24,13 +24,13 @@ export async function listCategories(db: Database, userId: string) {
         .orderBy(asc(categories.name))
 
     const existingNames = new Set(existing.map((c) => c.name.toLowerCase()))
-    const missing = DEFAULT_CATEGORIES.filter((name) => !existingNames.has(name.toLowerCase()))
+    const missing = DEFAULT_CATEGORIES.filter((c) => !existingNames.has(c.name.toLowerCase()))
 
     if (missing.length === 0) return existing
 
     const inserted = await db
         .insert(categories)
-        .values(missing.map((name) => ({ name, userId })))
+        .values(missing.map((c) => ({ name: c.name, icon: c.icon, userId })))
         .returning()
 
     return [...existing, ...inserted].sort((a, b) => a.name.localeCompare(b.name))

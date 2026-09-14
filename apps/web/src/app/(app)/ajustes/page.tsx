@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
+import { Trash2 } from 'lucide-react'
 import { DEFAULT_CATEGORIES } from '@contai/domain'
 import { authClient } from '@/lib/auth-client'
 import { useCards, useDeleteCard, useUpdateCard } from '@/hooks/use-cards'
@@ -39,9 +40,9 @@ function getThemeServerSnapshot() {
 
 function CardsListSkeleton() {
     return (
-        <div className="flex flex-col gap-3">
+        <div className="divide-y divide-border rounded-2xl border border-border bg-card">
             {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between gap-2">
+                <div key={i} className="flex items-center justify-between gap-2 p-3">
                     <div className="flex items-center gap-2">
                         <Skeleton className="h-10 w-16 rounded-lg" />
                         <Skeleton className="h-4 w-24" />
@@ -55,11 +56,14 @@ function CardsListSkeleton() {
 
 function CategoriesListSkeleton() {
     return (
-        <div className="flex flex-col gap-3">
+        <div className="divide-y divide-border rounded-2xl border border-border bg-card">
             {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between gap-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-16" />
+                <div key={i} className="flex items-center justify-between gap-2 p-3">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                    </div>
+                    <Skeleton className="h-4 w-4" />
                 </div>
             ))}
         </div>
@@ -70,7 +74,7 @@ export default function AjustesPage() {
     const router = useRouter()
     const { data: cards = [], isLoading: cardsLoading, isError: cardsError } = useCards()
     const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useCategories()
-    const defaultCategoryNames = new Set(DEFAULT_CATEGORIES.map((name) => name.toLowerCase()))
+    const defaultCategoryNames = new Set(DEFAULT_CATEGORIES.map((c) => c.name.toLowerCase()))
     const deleteCard = useDeleteCard()
     const updateCard = useUpdateCard()
     const deleteCategory = useDeleteCategory()
@@ -105,28 +109,35 @@ export default function AjustesPage() {
                 <TabsContent value="cards" className="flex flex-col gap-6">
                     <CardForm key={cardFormKey} onSuccess={() => setCardFormKey((k) => k + 1)} />
 
-                    <section className="flex flex-col gap-3">
+                    <section>
                         {cardsError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
                         {cardsLoading ? (
                             <CardsListSkeleton />
                         ) : (
-                            cards.map((card) => (
-                                <div key={card.id} className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <CardVisual size="sm" color={card.color} name={card.name} />
-                                        <span className="text-foreground">{card.name}</span>
+                            <div className="divide-y divide-border rounded-2xl border border-border bg-card">
+                                {cards.map((card) => (
+                                    <div key={card.id} className="flex items-center justify-between gap-2 p-3">
+                                        <div className="flex items-center gap-2">
+                                            <CardVisual size="sm" color={card.color} name={card.name} />
+                                            <span className="text-foreground">{card.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CardColorPicker
+                                                value={resolveCardColor(card.color)}
+                                                onChange={(color) => updateCard.mutate({ id: card.id, data: { color } })}
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label="Remover cartão"
+                                                onClick={() => deleteCard.mutate({ id: card.id })}
+                                            >
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <CardColorPicker
-                                            value={resolveCardColor(card.color)}
-                                            onChange={(color) => updateCard.mutate({ id: card.id, data: { color } })}
-                                        />
-                                        <Button variant="ghost" onClick={() => deleteCard.mutate({ id: card.id })}>
-                                            Remover
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))
+                                ))}
+                            </div>
                         )}
                     </section>
                 </TabsContent>
@@ -134,24 +145,39 @@ export default function AjustesPage() {
                 <TabsContent value="categories" className="flex flex-col gap-6">
                     <CategoryForm key={categoryFormKey} onSuccess={() => setCategoryFormKey((k) => k + 1)} />
 
-                    <section className="flex flex-col gap-3">
+                    <section>
                         {categoriesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
                         {categoriesLoading ? (
                             <CategoriesListSkeleton />
                         ) : (
-                            categories.map((category) => {
-                                const isDefault = defaultCategoryNames.has(category.name.toLowerCase())
-                                return (
-                                    <div key={category.id} className="flex items-center justify-between gap-2">
-                                        <span className="text-foreground">{category.name}</span>
-                                        {!isDefault && (
-                                            <Button variant="ghost" onClick={() => deleteCategory.mutate({ id: category.id })}>
-                                                Remover
-                                            </Button>
-                                        )}
-                                    </div>
-                                )
-                            })
+                            <div className="divide-y divide-border rounded-2xl border border-border bg-card">
+                                {categories.map((category) => {
+                                    const isDefault = defaultCategoryNames.has(category.name.toLowerCase())
+                                    return (
+                                        <div key={category.id} className="flex items-center justify-between gap-2 p-3">
+                                            <span className="flex items-center gap-2 text-foreground">
+                                                <span
+                                                    aria-hidden
+                                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-base"
+                                                >
+                                                    {category.icon ?? '📦'}
+                                                </span>
+                                                {category.name}
+                                            </span>
+                                            {!isDefault && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    aria-label="Remover categoria"
+                                                    onClick={() => deleteCategory.mutate({ id: category.id })}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         )}
                     </section>
                 </TabsContent>

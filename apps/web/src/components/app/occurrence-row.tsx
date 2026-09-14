@@ -5,9 +5,10 @@ import type { OccurrenceRow as OccurrenceRowData } from '@/hooks/use-occurrences
 export interface OccurrenceRowProps {
     occurrence: OccurrenceRowData
     onClick: () => void
+    categoryIcon?: string | null
 }
 
-export function OccurrenceRow({ occurrence, onClick }: OccurrenceRowProps) {
+export function OccurrenceRow({ occurrence, onClick, categoryIcon }: OccurrenceRowProps) {
     const forecast = occurrence.status === 'pending'
 
     return (
@@ -18,14 +19,22 @@ export function OccurrenceRow({ occurrence, onClick }: OccurrenceRowProps) {
             data-forecast={forecast ? '' : undefined}
             onClick={onClick}
             className={twMerge(
-                'flex min-h-11 w-full items-center justify-between rounded-2xl px-3 py-2 text-left hover:bg-secondary/60',
+                'flex min-h-11 w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-left hover:bg-secondary/60',
                 'data-[status=cancelled]:opacity-50',
                 'data-[forecast]:opacity-70 data-[forecast]:ring-1 data-[forecast]:ring-dashed data-[forecast]:ring-border',
             )}
         >
-            <span className="flex items-center gap-2 text-foreground">
-                {occurrence.description}
-                {occurrence.installmentsTotal ? ` (${occurrence.installmentNumber}/${occurrence.installmentsTotal})` : ''}
+            <span className="flex min-w-0 items-center gap-2 text-foreground">
+                <span
+                    aria-hidden
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-lg"
+                >
+                    {categoryIcon ?? '📦'}
+                </span>
+                <span className="min-w-0 truncate">
+                    {occurrence.description}
+                    {occurrence.installmentsTotal ? ` (${occurrence.installmentNumber}/${occurrence.installmentsTotal})` : ''}
+                </span>
                 {forecast && (
                     <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Previsto

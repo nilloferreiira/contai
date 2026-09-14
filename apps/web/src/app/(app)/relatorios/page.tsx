@@ -78,6 +78,11 @@ export default function RelatoriosPage() {
     const hasError = categoriesError || cardsError || occurrencesError || pendingError
 
     const categoryNames = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.name])), [categories])
+    const categoryIcons = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.icon])), [categories])
+    const categoriesById = useMemo(
+        () => Object.fromEntries(categories.map((c) => [c.id, { icon: c.icon }])),
+        [categories],
+    )
     const cardNames = useMemo(() => Object.fromEntries(cards.map((c) => [c.id, c.name])), [cards])
     const cardsById = useMemo(() => Object.fromEntries(cards.map((c) => [c.id, c])), [cards])
 
@@ -169,7 +174,9 @@ export default function RelatoriosPage() {
                                 className="w-full rounded-2xl border border-border bg-card p-3 text-left"
                             >
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-foreground">{categoryNames[slice.id] ?? 'Sem categoria'}</span>
+                                    <span className="text-foreground">
+                                        {categoryIcons[slice.id] ?? '📦'} {categoryNames[slice.id] ?? 'Sem categoria'}
+                                    </span>
                                     <span className="font-medium tabular-nums text-foreground">{formatBRL(slice.total)}</span>
                                 </div>
                                 <div className="mt-2 h-2 rounded-full bg-secondary">
@@ -184,7 +191,7 @@ export default function RelatoriosPage() {
                 )}
                 {categoryFilter && (
                     <div className="mt-3 rounded-2xl border border-border bg-card p-2">
-                        <OccurrenceList occurrences={categoryDetail} onSelect={setSelected} />
+                        <OccurrenceList occurrences={categoryDetail} onSelect={setSelected} categoriesById={categoriesById} />
                     </div>
                 )}
             </section>
