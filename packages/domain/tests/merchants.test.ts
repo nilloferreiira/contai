@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeMerchantName } from './merchants'
+import { normalizeMerchantName } from '../src/merchants'
 
 describe('normalizeMerchantName', () => {
     it('lowercases and strips accents', () => {

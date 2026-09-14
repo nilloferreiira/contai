@@ -1,2 +1,7 @@
 export { auth } from './auth'
 export type { Session } from './auth'
+export { createContext } from './context'
+export type { Context } from './context'
+export { appRouter } from './routers/_app'
+export type { AppRouter } from './routers/_app'
+export type { OccurrenceFilters } from './services/occurrences-service'

@@ -46,3 +46,4 @@ next-env.d.ts
 
 # plan doc backups
 docs/superpowers/plans/backup-*/
+.worktrees/

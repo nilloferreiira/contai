@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { summarizeMonth, type Occurrence } from './dashboard'
+import { summarizeMonth, type Occurrence } from '../src/dashboard'
 
 const occurrences: Occurrence[] = [
     { amount: 100, category_id: 'cat-1', card_id: 'card-1', status: 'pending' },
