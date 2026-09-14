@@ -7,9 +7,16 @@ export interface OccurrenceListProps {
     showDateHeaders?: boolean
     onSelect: (occurrence: OccurrenceRowData) => void
     categoriesById?: Record<string, { icon?: string | null }>
+    cardsById?: Record<string, { name: string; color?: string | null }>
 }
 
-export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect, categoriesById }: OccurrenceListProps) {
+export function OccurrenceList({
+    occurrences,
+    showDateHeaders = false,
+    onSelect,
+    categoriesById,
+    cardsById,
+}: OccurrenceListProps) {
     if (occurrences.length === 0) {
         return <p className="p-4 text-center text-sm text-muted-foreground">Nenhuma despesa encontrada.</p>
     }
@@ -23,6 +30,7 @@ export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect,
                         occurrence={occurrence}
                         onClick={() => onSelect(occurrence)}
                         categoryIcon={occurrence.categoryId ? categoriesById?.[occurrence.categoryId]?.icon : undefined}
+                        card={occurrence.cardId ? cardsById?.[occurrence.cardId] : undefined}
                     />
                 ))}
             </div>
@@ -50,6 +58,7 @@ export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect,
                                 occurrence={occurrence}
                                 onClick={() => onSelect(occurrence)}
                                 categoryIcon={occurrence.categoryId ? categoriesById?.[occurrence.categoryId]?.icon : undefined}
+                                card={occurrence.cardId ? cardsById?.[occurrence.cardId] : undefined}
                             />
                         ))}
                     </div>

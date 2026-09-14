@@ -10,6 +10,7 @@ import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
 import { useCategories } from '@/hooks/use-categories'
+import { useCards } from '@/hooks/use-cards'
 import { useSummary } from '@/hooks/use-summary'
 
 export default function InicioPage() {
@@ -32,6 +33,7 @@ export default function InicioPage() {
 
     const { data: summary, isLoading: summaryLoading } = useSummary(month)
     const { data: categories = [] } = useCategories()
+    const { data: cards = [] } = useCards()
     const {
         data: todayOccurrences = [],
         isLoading: occurrencesLoading,
@@ -41,6 +43,10 @@ export default function InicioPage() {
     const categoriesById = useMemo(
         () => Object.fromEntries(categories.map((c) => [c.id, { icon: c.icon }])),
         [categories],
+    )
+    const cardsById = useMemo(
+        () => Object.fromEntries(cards.map((c) => [c.id, { name: c.name, color: c.color }])),
+        [cards],
     )
 
     return (
@@ -62,7 +68,12 @@ export default function InicioPage() {
             {occurrencesLoading ? (
                 <OccurrenceListSkeleton rows={3} showDateHeaders={false} />
             ) : (
-                <OccurrenceList occurrences={todayOccurrences} onSelect={setSelected} categoriesById={categoriesById} />
+                <OccurrenceList
+                    occurrences={todayOccurrences}
+                    onSelect={setSelected}
+                    categoriesById={categoriesById}
+                    cardsById={cardsById}
+                />
             )}
             <OccurrenceSheet occurrence={selected} onOpenChange={(open) => !open && setSelected(null)} />
         </main>

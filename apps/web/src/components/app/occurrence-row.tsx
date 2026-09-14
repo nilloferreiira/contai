@@ -1,14 +1,16 @@
 import { formatBRL } from '@contai/domain'
 import { twMerge } from 'tailwind-merge'
 import type { OccurrenceRow as OccurrenceRowData } from '@/hooks/use-occurrences'
+import { CardVisual } from './card-visual'
 
 export interface OccurrenceRowProps {
     occurrence: OccurrenceRowData
     onClick: () => void
     categoryIcon?: string | null
+    card?: { name: string; color?: string | null } | null
 }
 
-export function OccurrenceRow({ occurrence, onClick, categoryIcon }: OccurrenceRowProps) {
+export function OccurrenceRow({ occurrence, onClick, categoryIcon, card }: OccurrenceRowProps) {
     const forecast = occurrence.status === 'pending'
 
     return (
@@ -31,15 +33,27 @@ export function OccurrenceRow({ occurrence, onClick, categoryIcon }: OccurrenceR
                 >
                     {categoryIcon ?? '📦'}
                 </span>
-                <span className="min-w-0 truncate">
-                    {occurrence.description}
-                    {occurrence.installmentsTotal ? ` (${occurrence.installmentNumber}/${occurrence.installmentsTotal})` : ''}
-                </span>
-                {forecast && (
-                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Previsto
+                <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                        <span className="min-w-0 truncate">
+                            {occurrence.description}
+                            {occurrence.installmentsTotal
+                                ? ` (${occurrence.installmentNumber}/${occurrence.installmentsTotal})`
+                                : ''}
+                        </span>
+                        {forecast && (
+                            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Previsto
+                            </span>
+                        )}
                     </span>
-                )}
+                    {card && (
+                        <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                            <CardVisual color={card.color} size="xs" />
+                            {card.name}
+                        </span>
+                    )}
+                </span>
             </span>
             <span
                 className={twMerge(

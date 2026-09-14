@@ -191,7 +191,12 @@ export default function RelatoriosPage() {
                 )}
                 {categoryFilter && (
                     <div className="mt-3 rounded-2xl border border-border bg-card p-2">
-                        <OccurrenceList occurrences={categoryDetail} onSelect={setSelected} categoriesById={categoriesById} />
+                        <OccurrenceList
+                            occurrences={categoryDetail}
+                            onSelect={setSelected}
+                            categoriesById={categoriesById}
+                            cardsById={cardsById}
+                        />
                     </div>
                 )}
             </section>
