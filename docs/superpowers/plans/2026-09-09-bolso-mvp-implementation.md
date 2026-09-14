@@ -45,8 +45,8 @@ Each row links to that section's full file (tasks, files, interfaces, step-by-st
   tRPC client wiring (`apps/web/src/lib/trpc/`) and matching React Query hooks (`use-cards.ts`, `use-categories.ts`, `use-merchants.ts`, `use-create-expense.ts`, `use-occurrences.ts`, `use-summary.ts`) via `@trpc/tanstack-react-query`. Depends on E1's routers existing for its "Verify manually" steps.
 
   E1/E2 together supersede the REST version previously at `section-e-api-hooks.md` and the combined tRPC doc previously at `section-e-api-trpc.md` — both never built, both deleted (see git history).
-- [ ] **Section F: UI components** (Tasks 25-31) — `2026-09-09-bolso-mvp-implementation/section-f-ui-components.md`
-  Card visual/colors, quick-add, manual expense dialog + form, occurrence list/row, occurrence sheet, summary tiles + month switcher, bottom-nav full wiring.
+- [x] **Section F: UI components** (Tasks 25-31) — `2026-09-09-bolso-mvp-implementation/section-f-ui-components.md`
+  Card visual/colors, quick-add, manual expense dialog + form, occurrence list/row, occurrence sheet, summary tiles + month switcher. Built per `2026-09-14-section-f-ui-components-worktree-plan.md` (a rewrite against post-tRPC-migration source); bottom-nav's `?focus=quick-add` autofocus wiring and all manual/live verification are deferred to Section G (Task 32+), since no app routes exist yet.
 - [ ] **Section G: Pages** (Tasks 32-35) — `2026-09-09-bolso-mvp-implementation/section-g-pages.md`
   `/inicio`, `/mes`, `/relatorios`, `/ajustes` (+ card/category forms, Better Auth sign-out).
 - [ ] **Section H: Polish** (Tasks 36-37) — `2026-09-09-bolso-mvp-implementation/section-h-polish.md`

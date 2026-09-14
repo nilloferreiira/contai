@@ -47,7 +47,7 @@
 > element, not a shadcn component, so this doesn't conflict with keeping
 > shadcn primitives elsewhere.
 
-- [ ] **Step 1: Write `src/lib/finance/card-colors.ts`**
+- [x] **Step 1: Write `src/lib/finance/card-colors.ts`**
 
 ```ts
 export interface CardColor {
@@ -76,7 +76,7 @@ export function resolveCardColor(color?: string | null): string {
 }
 ```
 
-- [ ] **Step 2: Write `src/components/app/card-visual.tsx`**
+- [x] **Step 2: Write `src/components/app/card-visual.tsx`**
 
 ```tsx
 import { twMerge } from 'tailwind-merge'
@@ -136,7 +136,7 @@ export function CardVisual({ size, color, name, className, ...props }: CardVisua
 }
 ```
 
-- [ ] **Step 3: Write `src/components/app/card-color-picker.tsx`**
+- [x] **Step 3: Write `src/components/app/card-color-picker.tsx`**
 
 ```tsx
 import { twMerge } from 'tailwind-merge'
@@ -166,11 +166,11 @@ export function CardColorPicker({ value, onChange }: CardColorPickerProps) {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Create a scratch page or use the browser devtools React tree once Task 35 wires this in — for now, verify with `pnpm build` (typecheck) and visually in Storybook-less fashion by temporarily rendering `<CardVisual size="lg" color="#8B5CF6" name="Nubank" />` inside `src/app/(app)/inicio/page.tsx` (placeholder, to be replaced in Task 32), running `pnpm dev`, and confirming the gradient card renders. Remove the placeholder render before committing if `/inicio` isn't built yet.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/finance/card-colors.ts src/components/app/card-visual.tsx src/components/app/card-color-picker.tsx
@@ -196,7 +196,7 @@ git commit -m "feat: add cosmetic card-visual component and color picker"
 > for the parsed amount. Still built on the shadcn `Input` component per the
 > plan's original structure — only sizing/shape classNames change.
 
-- [ ] **Step 1: Write `src/components/app/quick-add.tsx`**
+- [x] **Step 1: Write `src/components/app/quick-add.tsx`**
 
 ```tsx
 'use client'
@@ -277,7 +277,7 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [ ] **Step 2: Verify manually** (deferred — cannot run until Task 32 mounts this on `/inicio`)
 
 ```bash
 pnpm dev
@@ -285,7 +285,7 @@ pnpm dev
 
 Once Task 32 mounts this on `/inicio`, type `"1200 em 3x na americanas no nubank"`, confirm the live preview shows the parsed amount/installments/merchant, press Enter, confirm a toast and the input clears. Type something with no number, confirm the ambiguous message shows and Enter does nothing.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/app/quick-add.tsx
@@ -304,11 +304,11 @@ git commit -m "feat: add quick-add natural language expense input"
 - Consumes: `createExpenseSchema`/`CreateExpenseInput` (Task 18); `useCreateExpense` (Task 22); `useCards`/`useCategories` (Tasks 19-20); shadcn `Dialog`/`Select`/`Input`/`Button` (Task 2); `CardVisual` (Task 25)
 - Produces: `<ExpenseForm onSuccess: () => void />`, `<ManualExpenseDialog open, onOpenChange />` — consumed by Task 32 (`/inicio`, as the quick-add fallback).
 
-- [ ] **Step 1: Write `src/components/forms/expense-form.tsx`**
+- [x] **Step 1: Write `src/components/forms/expense-form.tsx`**
 
 RHF + zod form with fields: amount (number input), description (text), type (select: single/installment/recurring), conditional installments (number, shown when type=installment) / frequency (select, shown when type=recurring), categoryId (select from `useCategories`), cardId (select from `useCards`, rendering `<CardVisual size="sm" .../>` per option), purchaseDate (date input, default today). On submit, call `useCreateExpense().mutate(values, { onSuccess })`. Use `zodResolver(createExpenseSchema)` and `defaultValues: { type: 'single', purchaseDate: new Date(), amount: 0, description: '' }` per the spec.
 
-- [ ] **Step 2: Write `src/components/app/manual-expense-dialog.tsx`**
+- [x] **Step 2: Write `src/components/app/manual-expense-dialog.tsx`**
 
 ```tsx
 'use client'
@@ -335,7 +335,7 @@ export function ManualExpenseDialog({ open, onOpenChange }: ManualExpenseDialogP
 }
 ```
 
-- [ ] **Step 3: Verify manually**
+- [ ] **Step 3: Verify manually** (deferred — cannot run until Task 32 wires this into `/inicio`)
 
 ```bash
 pnpm dev
@@ -343,7 +343,7 @@ pnpm dev
 
 Once wired into `/inicio` (Task 32), open the dialog, submit an installment expense with invalid installments (e.g. 1), confirm the zod refine error shows under the field. Submit a valid one, confirm the dialog closes and a toast appears.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/forms/expense-form.tsx src/components/app/manual-expense-dialog.tsx
@@ -368,7 +368,7 @@ git commit -m "feat: add manual expense form and dialog fallback"
 > not yet realized) get a dashed ring, reduced opacity, and a "Previsto" pill;
 > amounts use `font-display tabular-nums`.
 
-- [ ] **Step 1: Write `src/components/app/occurrence-row.tsx`**
+- [x] **Step 1: Write `src/components/app/occurrence-row.tsx`**
 
 ```tsx
 import { formatBRL } from '@/lib/finance/money'
@@ -418,7 +418,7 @@ export function OccurrenceRow({ occurrence, onClick }: OccurrenceRowProps) {
 }
 ```
 
-- [ ] **Step 2: Write `src/components/app/occurrence-list.tsx`**
+- [x] **Step 2: Write `src/components/app/occurrence-list.tsx`**
 
 ```tsx
 import { OccurrenceRow } from './occurrence-row'
@@ -471,7 +471,7 @@ export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect 
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 pnpm build
@@ -479,7 +479,7 @@ pnpm build
 
 Typecheck passes; visual verification happens once mounted in Task 32/33.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/app/occurrence-row.tsx src/components/app/occurrence-list.tsx
@@ -497,7 +497,7 @@ git commit -m "feat: add occurrence list and row components"
 - Consumes: `OccurrenceRow` type (Task 23); `useUpdateOccurrence`/`useDeleteOccurrence` (Task 23); shadcn `Sheet`/`Switch`/`Button` (Task 2)
 - Produces: `<OccurrenceSheet occurrence: OccurrenceRow | null, onOpenChange />` — consumed by Task 32 (`/inicio`) and Task 33 (`/mes`).
 
-- [ ] **Step 1: Write `src/components/app/occurrence-sheet.tsx`**
+- [x] **Step 1: Write `src/components/app/occurrence-sheet.tsx`**
 
 ```tsx
 'use client'
@@ -568,11 +568,11 @@ export function OccurrenceSheet({ occurrence, onOpenChange }: OccurrenceSheetPro
 }
 ```
 
-- [ ] **Step 2: Verify manually**
+- [ ] **Step 2: Verify manually** (deferred — cannot run until Task 32/33 wire this in)
 
 Once wired into Task 32, click an occurrence row, toggle "Pago", confirm the row's amount styling updates (via `data-status`) after the list refetches. Delete an installment occurrence with scope "Esta e as futuras", confirm only that and later installments disappear.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/app/occurrence-sheet.tsx
@@ -597,7 +597,7 @@ git commit -m "feat: add occurrence edit/delete sheet with scope selection"
 > `bg-primary` fill sized by percentage of total) instead of a plain stacked
 > `Card` list — still built with the shadcn `Card` primitive.
 
-- [ ] **Step 1: Write `src/components/app/summary-tiles.tsx`**
+- [x] **Step 1: Write `src/components/app/summary-tiles.tsx`**
 
 ```tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -664,7 +664,7 @@ export function SummaryTiles({ total, byCategory, byCard }: SummaryTilesProps) {
 
 (Task 34 resolves `id` to category/card names via `useCategories()`/`useCards()` lookups when composing the page — this component stays presentational and ID-keyed.)
 
-- [ ] **Step 2: Write `src/components/app/month-switcher.tsx`**
+- [x] **Step 2: Write `src/components/app/month-switcher.tsx`**
 
 ```tsx
 'use client'
@@ -698,13 +698,13 @@ export function MonthSwitcher({ month, onChange }: MonthSwitcherProps) {
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 pnpm build
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/app/summary-tiles.tsx src/components/app/month-switcher.tsx
