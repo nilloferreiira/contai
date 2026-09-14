@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { formatBRL, monthKey, toISODate } from '@contai/domain'
+import { formatBRL, monthKey, monthLabel, toISODate } from '@contai/domain'
 import { QuickAdd } from '@/components/app/quick-add'
 import { ManualExpenseDialog } from '@/components/app/manual-expense-dialog'
 import { OccurrenceList } from '@/components/app/occurrence-list'
+import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleton'
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
 import { useSummary } from '@/hooks/use-summary'
 
@@ -30,21 +32,37 @@ export default function InicioPage() {
     const today = toISODate(new Date())
     const month = monthKey(new Date())
 
-    const { data: summary } = useSummary(month)
-    const { data: todayOccurrences = [], isError: occurrencesError } = useOccurrences({ from: today, to: today })
+    const { data: summary, isLoading: summaryLoading } = useSummary(month)
+    const {
+        data: todayOccurrences = [],
+        isLoading: occurrencesLoading,
+        isError: occurrencesError,
+    } = useOccurrences({ from: today, to: today })
 
     return (
         <main className="flex flex-col gap-4">
-            <h1 className="font-display text-2xl font-semibold text-foreground">
-                {summary ? formatBRL(summary.total) : '—'}
-            </h1>
+            <div>
+                <p className="text-sm font-medium text-muted-foreground">{monthLabel(new Date())}</p>
+                <h1 className="text-sm font-medium text-muted-foreground">Gastos no mês</h1>
+                {summaryLoading ? (
+                    <Skeleton className="mt-1 h-9 w-40 rounded-lg" />
+                ) : (
+                    <p className="font-display text-2xl font-semibold text-foreground">
+                        {summary ? formatBRL(summary.total) : '—'}
+                    </p>
+                )}
+            </div>
             <QuickAdd ref={quickAddRef} autoFocus={shouldFocus} />
             <Button variant="secondary" onClick={() => setManualOpen(true)}>
                 Adicionar manualmente
             </Button>
             <h2 className="text-lg font-medium text-foreground">Hoje</h2>
             {occurrencesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
-            <OccurrenceList occurrences={todayOccurrences} onSelect={setSelected} />
+            {occurrencesLoading ? (
+                <OccurrenceListSkeleton rows={3} showDateHeaders={false} />
+            ) : (
+                <OccurrenceList occurrences={todayOccurrences} onSelect={setSelected} />
+            )}
             <ManualExpenseDialog open={manualOpen} onOpenChange={setManualOpen} />
             <OccurrenceSheet occurrence={selected} onOpenChange={(open) => !open && setSelected(null)} />
         </main>
