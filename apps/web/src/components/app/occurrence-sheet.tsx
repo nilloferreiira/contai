@@ -23,8 +23,11 @@ export function OccurrenceSheet({ occurrence, onOpenChange }: OccurrenceSheetPro
 
     if (!occurrence) return null
 
-    const hasScopes = Boolean(occurrence.installmentPlanId || occurrence.recurrenceId)
-    const applicableScopes = hasScopes ? SCOPE_OPTIONS : [SCOPE_OPTIONS[0]]
+    const applicableScopes = occurrence.installmentPlanId
+        ? [SCOPE_OPTIONS[0], SCOPE_OPTIONS[1]]
+        : occurrence.recurrenceId
+        ? [SCOPE_OPTIONS[0], SCOPE_OPTIONS[2]]
+        : [SCOPE_OPTIONS[0]]
 
     return (
         <Sheet open={Boolean(occurrence)} onOpenChange={onOpenChange}>
