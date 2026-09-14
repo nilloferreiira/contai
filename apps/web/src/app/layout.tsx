@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Figtree, Fraunces } from "next/font/google";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/providers/query-provider";
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   description: "Registre um gasto em segundos, escrevendo do seu jeito.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
