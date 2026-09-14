@@ -39,6 +39,7 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
 
     function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
         if (event.key !== 'Enter' || !parsed || parsed.ambiguous || parsed.amount === null) return
+        if (createExpense.isPending) return
 
         createExpense.mutate(
             {
@@ -64,6 +65,7 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
+                disabled={createExpense.isPending}
                 placeholder="Ex: 1200 em 3x na americanas no nubank"
                 aria-label="Adicionar despesa por texto"
                 className="h-14 rounded-2xl border-2 text-lg font-medium"
