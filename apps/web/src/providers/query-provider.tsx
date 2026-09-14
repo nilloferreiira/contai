@@ -6,7 +6,16 @@ import { useState, type ReactNode } from 'react'
 import { TRPCReactProvider } from '@/lib/trpc/provider'
 
 export function QueryProvider({ children }: { children: ReactNode }) {
-    const [queryClient] = useState(() => new QueryClient())
+    const [queryClient] = useState(
+        () =>
+            new QueryClient({
+                defaultOptions: {
+                    queries: {
+                        staleTime: 30_000,
+                    },
+                },
+            }),
+    )
 
     return (
         <QueryClientProvider client={queryClient}>
