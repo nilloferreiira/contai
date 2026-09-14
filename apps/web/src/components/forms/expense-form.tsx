@@ -186,7 +186,12 @@ export function ExpenseForm({ onSuccess, defaultValues }: ExpenseFormProps) {
                     </div>
                     <div className="flex flex-col gap-1">
                         <Label htmlFor="endDate">Termina em (opcional)</Label>
-                        <Input id="endDate" type="date" {...register('endDate')} />
+                        <Input
+                            id="endDate"
+                            type="date"
+                            {...register('endDate', { setValueAs: (value) => (value === '' ? null : value) })}
+                        />
+                        {errors.endDate && <span className="text-sm text-destructive">{errors.endDate.message}</span>}
                     </div>
                 </div>
             )}
