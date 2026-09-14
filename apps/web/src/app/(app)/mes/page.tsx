@@ -1,15 +1,32 @@
 'use client'
 
-import { useState } from 'react'
-import { monthKey, toISODate } from '@contai/domain'
+import { useMemo, useState } from 'react'
+import { formatBRL, monthKey, splitRealizedForecast, toISODate, type Occurrence } from '@contai/domain'
 import { MonthSwitcher } from '@/components/app/month-switcher'
 import { OccurrenceList } from '@/components/app/occurrence-list'
+import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleton'
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
 import { useCategories } from '@/hooks/use-categories'
 import { useCards } from '@/hooks/use-cards'
+
+type TypeFilter = 'single' | 'installment' | 'recurring'
+
+function toDomainOccurrence(o: OccurrenceRow): Occurrence {
+    return {
+        amount: Number(o.amount),
+        category_id: o.categoryId,
+        card_id: o.cardId,
+        status: o.status,
+        recurrence_id: o.recurrenceId,
+        installments_total: o.installmentsTotal,
+        occurrence_date: o.occurrenceDate,
+        due_date: o.dueDate,
+    }
+}
 
 function monthRange(month: string) {
     const [year, m] = month.split('-').map(Number)
@@ -24,12 +41,17 @@ export default function MesPage() {
     const [categoryFilter, setCategoryFilter] = useState<string>()
     const [cardFilter, setCardFilter] = useState<string>()
     const [statusFilter, setStatusFilter] = useState<'pending' | 'paid' | 'cancelled'>()
+    const [typeFilter, setTypeFilter] = useState<TypeFilter>()
     const [selected, setSelected] = useState<OccurrenceRow | null>(null)
 
     const { data: categories = [] } = useCategories()
     const { data: cards = [] } = useCards()
     const { from, to } = monthRange(month)
-    const { data: occurrences = [], isError: occurrencesError } = useOccurrences({
+    const {
+        data: occurrences = [],
+        isLoading: occurrencesLoading,
+        isError: occurrencesError,
+    } = useOccurrences({
         from,
         to,
         q: search || undefined,
@@ -38,9 +60,40 @@ export default function MesPage() {
         status: statusFilter,
     })
 
+    const filtered = useMemo(() => {
+        if (!typeFilter) return occurrences
+        return occurrences.filter((o) => {
+            const isInstallment = (o.installmentsTotal ?? 0) > 1
+            const isRecurring = o.recurrenceId != null
+            if (typeFilter === 'installment') return isInstallment
+            if (typeFilter === 'recurring') return isRecurring
+            return !isInstallment && !isRecurring
+        })
+    }, [occurrences, typeFilter])
+
+    const split = useMemo(() => splitRealizedForecast(occurrences.map(toDomainOccurrence)), [occurrences])
+
     return (
         <main className="flex flex-col gap-4">
-            <MonthSwitcher month={month} onChange={setMonth} />
+            <div>
+                <MonthSwitcher month={month} onChange={setMonth} />
+                <div className="text-center">
+                    {occurrencesLoading ? (
+                        <Skeleton className="mx-auto mt-1 h-7 w-28 rounded-lg" />
+                    ) : (
+                        <>
+                            <p className="font-display text-2xl font-semibold tabular-nums text-foreground">
+                                {formatBRL(split.total)}
+                            </p>
+                            {split.forecast > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    {formatBRL(split.realized)} realizado · {formatBRL(split.forecast)} previsto
+                                </p>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
             <Input
                 placeholder="Buscar por descrição"
                 aria-label="Buscar despesas"
@@ -91,9 +144,27 @@ export default function MesPage() {
                         <SelectItem value="cancelled">Cancelado</SelectItem>
                     </SelectContent>
                 </Select>
+                <Select
+                    value={typeFilter ?? 'all'}
+                    onValueChange={(v) => setTypeFilter(v === 'all' ? undefined : (v as TypeFilter))}
+                >
+                    <SelectTrigger aria-label="Tipo">
+                        <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="single">Única</SelectItem>
+                        <SelectItem value="installment">Parcelada</SelectItem>
+                        <SelectItem value="recurring">Recorrente</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
             {occurrencesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
-            <OccurrenceList occurrences={occurrences} showDateHeaders onSelect={setSelected} />
+            {occurrencesLoading ? (
+                <OccurrenceListSkeleton rows={6} />
+            ) : (
+                <OccurrenceList occurrences={filtered} showDateHeaders onSelect={setSelected} />
+            )}
             <OccurrenceSheet occurrence={selected} onOpenChange={(open) => !open && setSelected(null)} />
         </main>
     )
