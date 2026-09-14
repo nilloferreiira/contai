@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { createExpenseInputSchema, toISODate, type CreateExpenseInput } from '@contai/domain'
 import { useCreateExpense } from '@/hooks/use-create-expense'
 import { useCards } from '@/hooks/use-cards'
@@ -23,7 +23,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     const {
         register,
         handleSubmit,
-        watch,
+        control,
         setValue,
         formState: { errors },
     } = useForm<CreateExpenseInput>({
@@ -36,7 +36,10 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         },
     })
 
-    const type = watch('type')
+    const type = useWatch({ control, name: 'type' })
+    const frequency = useWatch({ control, name: 'frequency' })
+    const categoryId = useWatch({ control, name: 'categoryId' })
+    const cardId = useWatch({ control, name: 'cardId' })
 
     function onSubmit(values: CreateExpenseInput) {
         createExpense.mutate(values, { onSuccess })
@@ -82,7 +85,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                 <div className="flex flex-col gap-1">
                     <label htmlFor="frequency">Frequência</label>
                     <Select
-                        value={watch('frequency')}
+                        value={frequency}
                         onValueChange={(value) => setValue('frequency', value as CreateExpenseInput['frequency'])}
                     >
                         <SelectTrigger id="frequency">
@@ -100,7 +103,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
             <div className="flex flex-col gap-1">
                 <label htmlFor="categoryId">Categoria</label>
-                <Select value={watch('categoryId') ?? undefined} onValueChange={(value) => setValue('categoryId', value)}>
+                <Select value={categoryId ?? undefined} onValueChange={(value) => setValue('categoryId', value)}>
                     <SelectTrigger id="categoryId">
                         <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
@@ -116,7 +119,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
             <div className="flex flex-col gap-1">
                 <label htmlFor="cardId">Cartão</label>
-                <Select value={watch('cardId') ?? undefined} onValueChange={(value) => setValue('cardId', value)}>
+                <Select value={cardId ?? undefined} onValueChange={(value) => setValue('cardId', value)}>
                     <SelectTrigger id="cardId">
                         <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
@@ -136,6 +139,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
             <div className="flex flex-col gap-1">
                 <label htmlFor="purchaseDate">Data</label>
                 <Input id="purchaseDate" type="date" {...register('purchaseDate')} />
+                {errors.purchaseDate && <span className="text-sm text-destructive">{errors.purchaseDate.message}</span>}
             </div>
 
             <Button type="submit" disabled={createExpense.isPending}>
