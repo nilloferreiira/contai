@@ -41,3 +41,18 @@ export function useDeleteOccurrence() {
         }),
     )
 }
+
+export function useConvertToRecurring() {
+    const trpc = useTRPC()
+    const queryClient = useQueryClient()
+    return useMutation(
+        trpc.occurrences.convertToRecurring.mutationOptions({
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: trpc.occurrences.list.queryKey() })
+                queryClient.invalidateQueries({ queryKey: trpc.reports.summary.queryKey() })
+                toast.success('Ocorrência atualizada')
+            },
+            onError: (error) => toast.error(error.message),
+        }),
+    )
+}
