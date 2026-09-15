@@ -16,7 +16,12 @@ const eslintConfig = defineConfig([
   ]),
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/app/**/page.tsx", "src/app/**/layout.tsx", "src/app/**/route.ts"],
+    ignores: [
+      "src/app/**/page.tsx",
+      "src/app/**/layout.tsx",
+      "src/app/**/route.ts",
+      "src/app/manifest.ts",
+    ],
     plugins: { import: importPlugin },
     rules: {
       "import/no-default-export": "error",

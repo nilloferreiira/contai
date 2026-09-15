@@ -12,8 +12,9 @@ only — no Google OAuth in MVP).
 ## Structure
 
 - `apps/web/` — Next.js App Router app (Vercel Root Directory)
-  - `src/app/(auth)/` — login/cadastro pages
-  - `src/app/(app)/` — authenticated pages (inicio, mes, relatorios, ajustes) behind a session guard
+  - `src/app/(auth)/` — login/cadastro pages (Server Components exporting per-route `metadata`; the interactive forms are client children in `src/components/forms/`)
+  - `src/app/(app)/` — authenticated pages (inicio, mes, relatorios, ajustes) behind a session guard; each route folder has a small `layout.tsx` Server Component exporting per-route `metadata`
+  - `src/app/manifest.ts` — PWA manifest via Next's file convention (auto-linked, no manual `<link rel="manifest">` needed)
   - `src/app/api/auth/[...all]/` — re-exports `@contai/api`'s Better Auth instance via `toNextJsHandler`
   - `src/components/ui/` — shadcn components
   - `src/components/app/` — app-specific components (quick-add, occurrence list, card-visual, ...)

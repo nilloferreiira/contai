@@ -72,8 +72,18 @@ function CategoriesListSkeleton() {
 
 export default function AjustesPage() {
     const router = useRouter()
-    const { data: cards = [], isLoading: cardsLoading, isError: cardsError } = useCards()
-    const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useCategories()
+    const {
+        data: cards = [],
+        isLoading: cardsLoading,
+        isError: cardsError,
+        refetch: refetchCards,
+    } = useCards()
+    const {
+        data: categories = [],
+        isLoading: categoriesLoading,
+        isError: categoriesError,
+        refetch: refetchCategories,
+    } = useCategories()
     const defaultCategoryNames = new Set(DEFAULT_CATEGORIES.map((c) => c.name.toLowerCase()))
     const deleteCard = useDeleteCard()
     const updateCard = useUpdateCard()
@@ -110,7 +120,14 @@ export default function AjustesPage() {
                     <CardForm key={cardFormKey} onSuccess={() => setCardFormKey((k) => k + 1)} />
 
                     <section>
-                        {cardsError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+                        {cardsError && (
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>
+                                <Button variant="outline" size="sm" onClick={() => refetchCards()}>
+                                    Tentar novamente
+                                </Button>
+                            </div>
+                        )}
                         {cardsLoading ? (
                             <CardsListSkeleton />
                         ) : (
@@ -146,7 +163,14 @@ export default function AjustesPage() {
                     <CategoryForm key={categoryFormKey} onSuccess={() => setCategoryFormKey((k) => k + 1)} />
 
                     <section>
-                        {categoriesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+                        {categoriesError && (
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>
+                                <Button variant="outline" size="sm" onClick={() => refetchCategories()}>
+                                    Tentar novamente
+                                </Button>
+                            </div>
+                        )}
                         {categoriesLoading ? (
                             <CategoriesListSkeleton />
                         ) : (

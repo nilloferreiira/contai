@@ -14,11 +14,15 @@ export function CardColorPicker({ value, onChange }: CardColorPickerProps) {
                     key={color.value}
                     type="button"
                     aria-label={`Cor ${color.label}`}
-                    data-selected={value === color.value ? '' : undefined}
                     onClick={() => onChange(color.value)}
-                    className={twMerge('size-8 rounded-full border-2 border-transparent data-[selected]:border-ring')}
-                    style={{ backgroundColor: color.value }}
-                />
+                    className="flex size-11 items-center justify-center rounded-full outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                    <span
+                        data-selected={value === color.value ? '' : undefined}
+                        className={twMerge('size-8 rounded-full border-2 border-transparent data-[selected]:border-ring')}
+                        style={{ backgroundColor: color.value }}
+                    />
+                </button>
             ))}
         </div>
     )

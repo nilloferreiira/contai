@@ -19,6 +19,7 @@ import { CardVisual } from '@/components/app/card-visual'
 import { MonthSwitcher } from '@/components/app/month-switcher'
 import { OccurrenceList } from '@/components/app/occurrence-list'
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
 import { useCategories } from '@/hooks/use-categories'
@@ -51,8 +52,18 @@ export default function RelatoriosPage() {
     const [categoryFilter, setCategoryFilter] = useState<string>()
     const [selected, setSelected] = useState<OccurrenceRow | null>(null)
 
-    const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useCategories()
-    const { data: cards = [], isLoading: cardsLoading, isError: cardsError } = useCards()
+    const {
+        data: categories = [],
+        isLoading: categoriesLoading,
+        isError: categoriesError,
+        refetch: refetchCategories,
+    } = useCategories()
+    const {
+        data: cards = [],
+        isLoading: cardsLoading,
+        isError: cardsError,
+        refetch: refetchCards,
+    } = useCards()
     const { data: summary, isLoading: summaryLoading } = useSummary(month)
 
     const { from, to } = monthRange(month)
@@ -60,6 +71,7 @@ export default function RelatoriosPage() {
         data: occurrences = [],
         isLoading: occurrencesLoading,
         isError: occurrencesError,
+        refetch: refetchOccurrences,
     } = useOccurrences({ from, to })
 
     // Look back to the start of last month so charges already incurred this
@@ -73,9 +85,17 @@ export default function RelatoriosPage() {
         data: pending = [],
         isLoading: pendingLoading,
         isError: pendingError,
+        refetch: refetchPending,
     } = useOccurrences({ from: invoiceLookback, status: 'pending' })
 
     const hasError = categoriesError || cardsError || occurrencesError || pendingError
+
+    function retryAll() {
+        refetchCategories()
+        refetchCards()
+        refetchOccurrences()
+        refetchPending()
+    }
 
     const categoryNames = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.name])), [categories])
     const categoryIcons = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.icon])), [categories])
@@ -111,7 +131,14 @@ export default function RelatoriosPage() {
         <main className="flex flex-col gap-4">
             <MonthSwitcher month={month} onChange={setMonth} />
 
-            {hasError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+            {hasError && (
+                <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>
+                    <Button variant="outline" size="sm" onClick={retryAll}>
+                        Tentar novamente
+                    </Button>
+                </div>
+            )}
 
             <section>
                 {occurrencesLoading || summaryLoading ? (
@@ -171,7 +198,7 @@ export default function RelatoriosPage() {
                                 key={slice.id}
                                 type="button"
                                 onClick={() => setCategoryFilter(categoryFilter === slice.id ? undefined : slice.id)}
-                                className="w-full rounded-2xl border border-border bg-card p-3 text-left"
+                                className="w-full rounded-2xl border border-border bg-card p-3 text-left outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                             >
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-foreground">
