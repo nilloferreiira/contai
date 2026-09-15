@@ -6,6 +6,7 @@ import { MonthSwitcher } from '@/components/app/month-switcher'
 import { OccurrenceList } from '@/components/app/occurrence-list'
 import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleton'
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -52,6 +53,7 @@ export default function MesPage() {
         data: occurrences = [],
         isLoading: occurrencesLoading,
         isError: occurrencesError,
+        refetch: refetchOccurrences,
     } = useOccurrences({
         from,
         to,
@@ -160,7 +162,14 @@ export default function MesPage() {
                     </SelectContent>
                 </Select>
             </div>
-            {occurrencesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+            {occurrencesError && (
+                <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>
+                    <Button variant="outline" size="sm" onClick={() => refetchOccurrences()}>
+                        Tentar novamente
+                    </Button>
+                </div>
+            )}
             {occurrencesLoading ? (
                 <OccurrenceListSkeleton rows={6} />
             ) : (

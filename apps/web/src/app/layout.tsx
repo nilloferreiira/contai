@@ -16,7 +16,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Contai",
+  title: {
+    template: "%s — Contai",
+    default: "Contai",
+  },
   description: "Registre um gasto em segundos, escrevendo do seu jeito.",
 };
 

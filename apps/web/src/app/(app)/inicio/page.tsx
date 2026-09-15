@@ -7,6 +7,7 @@ import { QuickAdd } from '@/components/app/quick-add'
 import { OccurrenceList } from '@/components/app/occurrence-list'
 import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleton'
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
 import { useCategories } from '@/hooks/use-categories'
@@ -38,6 +39,7 @@ export default function InicioPage() {
         data: todayOccurrences = [],
         isLoading: occurrencesLoading,
         isError: occurrencesError,
+        refetch: refetchOccurrences,
     } = useOccurrences({ from: today, to: today })
 
     const categoriesById = useMemo(
@@ -64,7 +66,14 @@ export default function InicioPage() {
             </div>
             <QuickAdd ref={quickAddRef} autoFocus={shouldFocus} />
             <h2 className="text-lg font-medium text-foreground">Hoje</h2>
-            {occurrencesError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+            {occurrencesError && (
+                <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>
+                    <Button variant="outline" size="sm" onClick={() => refetchOccurrences()}>
+                        Tentar novamente
+                    </Button>
+                </div>
+            )}
             {occurrencesLoading ? (
                 <OccurrenceListSkeleton rows={3} showDateHeaders={false} />
             ) : (

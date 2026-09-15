@@ -18,11 +18,21 @@ export function MonthSwitcher({ month, onChange }: MonthSwitcherProps) {
 
     return (
         <div data-slot="month-switcher" className={twMerge('flex items-center justify-between')}>
-            <button type="button" aria-label="Mês anterior" onClick={() => shift(-1)} className="flex size-11 items-center justify-center">
+            <button
+                type="button"
+                aria-label="Mês anterior"
+                onClick={() => shift(-1)}
+                className="flex size-11 items-center justify-center rounded-lg outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
                 <ChevronLeft className="size-5" />
             </button>
             <span className="font-medium text-foreground">{monthLabel(fromISODate(`${month}-01`))}</span>
-            <button type="button" aria-label="Próximo mês" onClick={() => shift(1)} className="flex size-11 items-center justify-center">
+            <button
+                type="button"
+                aria-label="Próximo mês"
+                onClick={() => shift(1)}
+                className="flex size-11 items-center justify-center rounded-lg outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
                 <ChevronRight className="size-5" />
             </button>
         </div>
