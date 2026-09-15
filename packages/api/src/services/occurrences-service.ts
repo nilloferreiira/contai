@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { and, desc, eq, gte, ilike, isNull, lte } from 'drizzle-orm'
-import { cards, categories, expenseInstallments } from '@contai/db'
+import { cards, categories, expenseInstallments, recurrences } from '@contai/db'
 import { ServiceError } from './errors'
 import type { Database } from './types'
 
@@ -29,15 +29,19 @@ export type Scope = z.infer<typeof scopeSchema>
 function scopedConditions(scope: Scope, userId: string, current: typeof expenseInstallments.$inferSelect) {
     const conditions = [eq(expenseInstallments.userId, userId), isNull(expenseInstallments.deletedAt)]
 
-    if (scope === 'future' && current.installmentPlanId) {
+    if (scope === 'future' && current.recurrenceId) {
         conditions.push(
-            eq(expenseInstallments.installmentPlanId, current.installmentPlanId),
+            eq(expenseInstallments.recurrenceId, current.recurrenceId),
             gte(expenseInstallments.occurrenceDate, current.occurrenceDate),
         )
         return conditions
     }
     if (scope === 'series' && current.recurrenceId) {
         conditions.push(eq(expenseInstallments.recurrenceId, current.recurrenceId))
+        return conditions
+    }
+    if (scope === 'series' && current.installmentPlanId) {
+        conditions.push(eq(expenseInstallments.installmentPlanId, current.installmentPlanId))
         return conditions
     }
     if (scope === 'end' && current.recurrenceId) {
@@ -93,15 +97,15 @@ export async function updateOccurrence(db: Database, userId: string, id: string,
         if (!cardRow) throw new ServiceError('NOT_FOUND', 'Cartão não encontrado')
     }
 
-    const patch: Partial<typeof expenseInstallments.$inferInsert> = {
+    const basePatch: Partial<typeof expenseInstallments.$inferInsert> = {
         ...(patchInput.status && { status: patchInput.status }),
-        ...(patchInput.amount && { amount: String(patchInput.amount) }),
         ...(patchInput.description && { description: patchInput.description }),
         ...(patchInput.categoryId !== undefined && { categoryId: patchInput.categoryId }),
         ...(patchInput.cardId !== undefined && { cardId: patchInput.cardId }),
     }
 
     if (scope === 'occurrence') {
+        const patch = { ...basePatch, ...(patchInput.amount && { amount: String(patchInput.amount) }) }
         const [data] = await db
             .update(expenseInstallments)
             .set(patch)
@@ -114,6 +118,16 @@ export async function updateOccurrence(db: Database, userId: string, id: string,
 
     const current = await findCurrent(db, userId, id)
     const conditions = scopedConditions(scope, userId, current)
+
+    // Editing a whole installment purchase's amount takes the new *total*
+    // (the UI labels it "Valor total da compra"), split evenly per installment.
+    const amount = current.installmentPlanId
+        ? patchInput.amount && current.installmentsTotal
+            ? patchInput.amount / current.installmentsTotal
+            : undefined
+        : patchInput.amount
+
+    const patch = { ...basePatch, ...(amount && { amount: String(amount) }) }
     return db.update(expenseInstallments).set(patch).where(and(...conditions)).returning()
 }
 
@@ -134,5 +148,13 @@ export async function deleteOccurrence(db: Database, userId: string, id: string,
     const current = await findCurrent(db, userId, id)
     const conditions = scopedConditions(scope, userId, current)
     await db.update(expenseInstallments).set({ deletedAt }).where(and(...conditions))
+
+    if (scope === 'end' && current.recurrenceId) {
+        await db
+            .update(recurrences)
+            .set({ active: false, endDate: current.occurrenceDate })
+            .where(and(eq(recurrences.id, current.recurrenceId), eq(recurrences.userId, userId)))
+    }
+
     return { ok: true }
 }
