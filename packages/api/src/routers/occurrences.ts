@@ -8,6 +8,7 @@ import {
     updateOccurrence,
     deleteOccurrence,
 } from '../services/occurrences-service'
+import { convertToRecurringInputSchema, convertToRecurring } from '../services/recurrences-service'
 
 export const occurrencesRouter = router({
     list: protectedProcedure
@@ -23,4 +24,12 @@ export const occurrencesRouter = router({
     delete: protectedProcedure
         .input(z.object({ id: z.uuid(), scope: scopeSchema }))
         .mutation(({ ctx, input }) => deleteOccurrence(ctx.db, ctx.userId, input.id, input.scope).catch(mapServiceError)),
+
+    convertToRecurring: protectedProcedure
+        .input(z.object({ id: z.uuid() }).extend(convertToRecurringInputSchema.shape))
+        .mutation(({ ctx, input }) =>
+            convertToRecurring(ctx.db, ctx.userId, input.id, { frequency: input.frequency, endDate: input.endDate }).catch(
+                mapServiceError,
+            ),
+        ),
 })

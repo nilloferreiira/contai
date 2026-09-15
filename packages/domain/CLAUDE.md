@@ -23,6 +23,19 @@ function is a plain input→output transformation. Implementation lives in
 - `merchants.ts` — normalizes merchant names for dedup matching.
 - `parser.ts` — deterministic natural-language expense parser.
 - `dashboard.ts` — read-side aggregations over occurrences.
-- `schemas/` — zod schemas shared between forms (`apps/web`) and future
+- `schemas/` — zod schemas shared between forms (`apps/web`) and
   API validation (`packages/api`) — `auth-schema.ts` (sign-in/sign-up,
-  password requirements).
+  password requirements), `expense-schema.ts` (`createExpenseInputSchema`,
+  used by both the tRPC `expenses` router and the client-side expense form),
+  `card-schema.ts` (`cardInputSchema`/`updateCardInputSchema`, used by the
+  tRPC `cards` router and the client-side card form), and `category-schema.ts`
+  (`categoryInputSchema`/`updateCategoryInputSchema`, used by the tRPC
+  `categories` router and the client-side category form; also
+  `DEFAULT_CATEGORIES`, the seeded category names re-created by
+  `listCategories` on every call — re-exported from
+  `categories-service.ts` for server-side importers, but the client-side
+  `/ajustes` page imports it from here directly so it can hide the delete
+  button for those rows) — each lives here,
+  not in `packages/api`, so client components never need to import a runtime
+  value from `@contai/api`, which transitively pulls in
+  `better-auth`/`@contai/db`.

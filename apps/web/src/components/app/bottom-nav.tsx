@@ -34,7 +34,7 @@ export function BottomNav({ className, ...props }: BottomNavProps) {
                 <Link
                     href="/inicio?focus=quick-add"
                     aria-label="Adicionar despesa"
-                    className="-mt-6 flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
+                    className="-mt-6 flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg outline-none transition-transform focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-95"
                 >
                     <Plus className="size-6" />
                 </Link>
@@ -59,7 +59,7 @@ function NavLink({ href, label, icon: Icon, active }: NavLinkProps) {
             href={href}
             data-active={active ? '' : undefined}
             className={twMerge(
-                'flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs text-muted-foreground data-[active]:text-primary',
+                'flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 data-[active]:text-primary',
             )}
         >
             <Icon className="size-5" />

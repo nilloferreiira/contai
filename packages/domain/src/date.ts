@@ -35,3 +35,19 @@ export function clampDay(monthStart: Date, day: number): Date {
     const lastDayOfMonth = new Date(year, month + 1, 0).getDate()
     return new Date(year, month, Math.min(day, lastDayOfMonth))
 }
+
+const MONTHS = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
+export function monthLabel(date: Date): string {
+    return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+}
+
+export function monthRange(month: string): { from: string; to: string } {
+    const [year, m] = month.split('-').map(Number)
+    const start = new Date(year, m - 1, 1)
+    const end = new Date(year, m, 0)
+    return { from: toISODate(start), to: toISODate(end) }
+}
