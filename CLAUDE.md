@@ -39,7 +39,7 @@ only — no Google OAuth in MVP).
 - Full design spec: `docs/superpowers/specs/2026-09-09-bolso-mvp-design.md`.
 - Implementation plan: `docs/superpowers/plans/2026-09-09-bolso-mvp-implementation.md`.
 - Monorepo/tRPC migration design: `docs/superpowers/specs/2026-09-11-monorepo-trpc-migration-design.md`.
-- Visual/style system (colors, radius, fonts, mobile shell) is sourced from the
-  `swift-spend` MVP for parity: OKLCH forest-green/lime palette, Figtree
-  (sans) + Fraunces (display), `1rem` base radius, `max-w-lg` centered mobile
-  shell with a floating-FAB bottom nav.
+- Visual/style system: OKLCH forest-green/lime palette, Figtree (sans) +
+  Fraunces (display), `1rem` base radius, `max-w-lg` centered mobile shell
+  with a floating-FAB bottom nav.
+- Git worktrees must be created only inside `.worktrees/` or `.claude/worktrees/` — never elsewhere in or outside the repo.
