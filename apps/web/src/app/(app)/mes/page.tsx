@@ -8,6 +8,7 @@ import { OccurrenceListSkeleton } from '@/components/app/occurrence-list-skeleto
 import { OccurrenceSheet } from '@/components/app/occurrence-sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOccurrences, type OccurrenceRow } from '@/hooks/use-occurrences'
@@ -104,63 +105,83 @@ export default function MesPage() {
                 onChange={(e) => setSearch(e.target.value)}
             />
             <div className="grid grid-cols-4 gap-2">
-                <Select
-                    value={categoryFilter ?? 'all'}
-                    onValueChange={(v) => setCategoryFilter(v === 'all' ? undefined : v)}
-                >
-                    <SelectTrigger aria-label="Categoria">
-                        <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select value={cardFilter ?? 'all'} onValueChange={(v) => setCardFilter(v === 'all' ? undefined : v)}>
-                    <SelectTrigger aria-label="Cartão">
-                        <SelectValue placeholder="Cartão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {cards.map((card) => (
-                            <SelectItem key={card.id} value={card.id}>
-                                {card.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select
-                    value={statusFilter ?? 'all'}
-                    onValueChange={(v) => setStatusFilter(v === 'all' ? undefined : (v as typeof statusFilter))}
-                >
-                    <SelectTrigger aria-label="Status">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="paid">Pago</SelectItem>
-                        <SelectItem value="cancelled">Cancelado</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select
-                    value={typeFilter ?? 'all'}
-                    onValueChange={(v) => setTypeFilter(v === 'all' ? undefined : (v as TypeFilter))}
-                >
-                    <SelectTrigger aria-label="Tipo">
-                        <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="single">Única</SelectItem>
-                        <SelectItem value="installment">Parcelada</SelectItem>
-                        <SelectItem value="recurring">Recorrente</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="flex flex-col gap-1">
+                    <Label htmlFor="filter-categoria" className="text-xs font-normal text-muted-foreground">
+                        Categoria
+                    </Label>
+                    <Select
+                        value={categoryFilter ?? 'all'}
+                        onValueChange={(v) => setCategoryFilter(v === 'all' ? undefined : v)}
+                    >
+                        <SelectTrigger id="filter-categoria" aria-label="Categoria">
+                            <SelectValue placeholder="Categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas</SelectItem>
+                            {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <Label htmlFor="filter-cartao" className="text-xs font-normal text-muted-foreground">
+                        Cartão
+                    </Label>
+                    <Select value={cardFilter ?? 'all'} onValueChange={(v) => setCardFilter(v === 'all' ? undefined : v)}>
+                        <SelectTrigger id="filter-cartao" aria-label="Cartão">
+                            <SelectValue placeholder="Cartão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            {cards.map((card) => (
+                                <SelectItem key={card.id} value={card.id}>
+                                    {card.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <Label htmlFor="filter-status" className="text-xs font-normal text-muted-foreground">
+                        Status
+                    </Label>
+                    <Select
+                        value={statusFilter ?? 'all'}
+                        onValueChange={(v) => setStatusFilter(v === 'all' ? undefined : (v as typeof statusFilter))}
+                    >
+                        <SelectTrigger id="filter-status" aria-label="Status">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="pending">Pendente</SelectItem>
+                            <SelectItem value="paid">Pago</SelectItem>
+                            <SelectItem value="cancelled">Cancelado</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <Label htmlFor="filter-tipo" className="text-xs font-normal text-muted-foreground">
+                        Tipo
+                    </Label>
+                    <Select
+                        value={typeFilter ?? 'all'}
+                        onValueChange={(v) => setTypeFilter(v === 'all' ? undefined : (v as TypeFilter))}
+                    >
+                        <SelectTrigger id="filter-tipo" aria-label="Tipo">
+                            <SelectValue placeholder="Tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="single">Única</SelectItem>
+                            <SelectItem value="installment">Parcelada</SelectItem>
+                            <SelectItem value="recurring">Recorrente</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             {occurrencesError && (
                 <div className="flex items-center justify-between gap-2">
