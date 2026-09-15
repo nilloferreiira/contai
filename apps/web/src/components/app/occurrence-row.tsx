@@ -1,4 +1,4 @@
-import { formatBRL } from '@contai/domain'
+import { formatBRL, isForecast } from '@contai/domain'
 import { twMerge } from 'tailwind-merge'
 import type { OccurrenceRow as OccurrenceRowData } from '@/hooks/use-occurrences'
 import { CardVisual } from './card-visual'
@@ -11,7 +11,15 @@ export interface OccurrenceRowProps {
 }
 
 export function OccurrenceRow({ occurrence, onClick, categoryIcon, card }: OccurrenceRowProps) {
-    const forecast = occurrence.status === 'pending'
+    const forecast =
+        occurrence.status !== 'cancelled' &&
+        isForecast({
+            amount: Number(occurrence.amount),
+            category_id: occurrence.categoryId,
+            card_id: occurrence.cardId,
+            status: occurrence.status,
+            occurrence_date: occurrence.occurrenceDate,
+        })
 
     return (
         <button
