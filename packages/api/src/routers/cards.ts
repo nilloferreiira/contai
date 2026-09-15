@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import { cardInputSchema, updateCardInputSchema } from '@contai/domain'
 import { protectedProcedure, router, mapServiceError } from '../trpc'
-import { cardInputSchema, updateCardInputSchema, listCards, createCard, updateCard, deleteCard } from '../services/cards-service'
+import { listCards, createCard, updateCard, deleteCard } from '../services/cards-service'
 
 export const cardsRouter = router({
     list: protectedProcedure.query(({ ctx }) => listCards(ctx.db, ctx.userId)),

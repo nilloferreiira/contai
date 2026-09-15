@@ -6,9 +6,17 @@ export interface OccurrenceListProps {
     occurrences: OccurrenceRowData[]
     showDateHeaders?: boolean
     onSelect: (occurrence: OccurrenceRowData) => void
+    categoriesById?: Record<string, { icon?: string | null }>
+    cardsById?: Record<string, { name: string; color?: string | null }>
 }
 
-export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect }: OccurrenceListProps) {
+export function OccurrenceList({
+    occurrences,
+    showDateHeaders = false,
+    onSelect,
+    categoriesById,
+    cardsById,
+}: OccurrenceListProps) {
     if (occurrences.length === 0) {
         return <p className="p-4 text-center text-sm text-muted-foreground">Nenhuma despesa encontrada.</p>
     }
@@ -17,7 +25,13 @@ export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect 
         return (
             <div data-slot="occurrence-list" className="flex flex-col">
                 {occurrences.map((occurrence) => (
-                    <OccurrenceRow key={occurrence.id} occurrence={occurrence} onClick={() => onSelect(occurrence)} />
+                    <OccurrenceRow
+                        key={occurrence.id}
+                        occurrence={occurrence}
+                        onClick={() => onSelect(occurrence)}
+                        categoryIcon={occurrence.categoryId ? categoriesById?.[occurrence.categoryId]?.icon : undefined}
+                        card={occurrence.cardId ? cardsById?.[occurrence.cardId] : undefined}
+                    />
                 ))}
             </div>
         )
@@ -39,7 +53,13 @@ export function OccurrenceList({ occurrences, showDateHeaders = false, onSelect 
                     </h3>
                     <div className="divide-y divide-border/60">
                         {group.map((occurrence) => (
-                            <OccurrenceRow key={occurrence.id} occurrence={occurrence} onClick={() => onSelect(occurrence)} />
+                            <OccurrenceRow
+                                key={occurrence.id}
+                                occurrence={occurrence}
+                                onClick={() => onSelect(occurrence)}
+                                categoryIcon={occurrence.categoryId ? categoriesById?.[occurrence.categoryId]?.icon : undefined}
+                                card={occurrence.cardId ? cardsById?.[occurrence.cardId] : undefined}
+                            />
                         ))}
                     </div>
                 </div>

@@ -8,7 +8,7 @@ export interface CardColorPickerProps {
 
 export function CardColorPicker({ value, onChange }: CardColorPickerProps) {
     return (
-        <div data-slot="card-color-picker" className="flex gap-2">
+        <div data-slot="card-color-picker" className="flex flex-wrap gap-2">
             {CARD_COLORS.map((color) => (
                 <button
                     key={color.value}

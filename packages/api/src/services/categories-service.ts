@@ -1,19 +1,20 @@
-import { z } from 'zod'
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { categories } from '@contai/db'
+import {
+    categoryInputSchema,
+    updateCategoryInputSchema,
+    DEFAULT_CATEGORIES,
+    type CategoryInput,
+    type UpdateCategoryInput,
+} from '@contai/domain'
 import { ServiceError } from './errors'
 import type { Database } from './types'
 
-const DEFAULT_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Compras', 'Outros']
-
-export const categoryInputSchema = z.object({
-    name: z.string().min(1, 'Informe um nome').max(60),
-    icon: z.string().max(40).nullable().optional(),
-})
-export type CategoryInput = z.infer<typeof categoryInputSchema>
-
-export const updateCategoryInputSchema = categoryInputSchema.partial()
-export type UpdateCategoryInput = z.infer<typeof updateCategoryInputSchema>
+// Re-exported for backward compatibility: the list now lives in
+// `@contai/domain` (see packages/domain/src/schemas/category-schema.ts) so
+// client components can import it without pulling in @contai/api's barrel
+// (which builds a betterAuth instance at module scope).
+export { DEFAULT_CATEGORIES }
 
 export async function listCategories(db: Database, userId: string) {
     const existing = await db
@@ -23,13 +24,13 @@ export async function listCategories(db: Database, userId: string) {
         .orderBy(asc(categories.name))
 
     const existingNames = new Set(existing.map((c) => c.name.toLowerCase()))
-    const missing = DEFAULT_CATEGORIES.filter((name) => !existingNames.has(name.toLowerCase()))
+    const missing = DEFAULT_CATEGORIES.filter((c) => !existingNames.has(c.name.toLowerCase()))
 
     if (missing.length === 0) return existing
 
     const inserted = await db
         .insert(categories)
-        .values(missing.map((name) => ({ name, userId })))
+        .values(missing.map((c) => ({ name: c.name, icon: c.icon, userId })))
         .returning()
 
     return [...existing, ...inserted].sort((a, b) => a.name.localeCompare(b.name))

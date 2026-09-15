@@ -1,13 +1,7 @@
 import { z } from 'zod'
+import { categoryInputSchema, updateCategoryInputSchema } from '@contai/domain'
 import { protectedProcedure, router, mapServiceError } from '../trpc'
-import {
-    categoryInputSchema,
-    updateCategoryInputSchema,
-    listCategories,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-} from '../services/categories-service'
+import { listCategories, createCategory, updateCategory, deleteCategory } from '../services/categories-service'
 
 export const categoriesRouter = router({
     list: protectedProcedure.query(({ ctx }) => listCategories(ctx.db, ctx.userId)),

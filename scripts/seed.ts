@@ -16,9 +16,8 @@ function cardCycleFor(cardKey: string | null): CardCycle | null {
 
 async function main() {
     const targetUserId = process.argv[2]
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-    if (!targetUserId || !uuidPattern.test(targetUserId)) {
+    if (!targetUserId) {
         console.error('Uso: pnpm db:seed <userId>')
         process.exit(1)
     }

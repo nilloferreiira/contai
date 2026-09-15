@@ -1,20 +1,24 @@
 'use client'
 
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useMemo, useState, type KeyboardEvent, type Ref } from 'react'
 import { parseExpenseInput, formatBRL, toISODate } from '@contai/domain'
 import { useCards } from '@/hooks/use-cards'
 import { useCategories } from '@/hooks/use-categories'
 import { useMerchants } from '@/hooks/use-merchants'
 import { useCreateExpense } from '@/hooks/use-create-expense'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { ManualExpenseDialog } from '@/components/app/manual-expense-dialog'
+import { CardVisual } from '@/components/app/card-visual'
 
 export interface QuickAddProps {
     autoFocus?: boolean
+    ref?: Ref<HTMLInputElement>
 }
 
-export function QuickAdd({ autoFocus }: QuickAddProps) {
+export function QuickAdd({ autoFocus, ref }: QuickAddProps) {
     const [text, setText] = useState('')
-    const inputRef = useRef<HTMLInputElement>(null)
+    const [manualOpen, setManualOpen] = useState(false)
     const { data: cards = [] } = useCards()
     const { data: categories = [] } = useCategories()
     const { data: merchants = [] } = useMerchants()
@@ -37,8 +41,15 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
         return parseExpenseInput(text, { cards, categories, merchants: parserMerchants }, new Date())
     }, [text, cards, categories, parserMerchants])
 
-    function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-        if (event.key !== 'Enter' || !parsed || parsed.ambiguous || parsed.amount === null) return
+    const outrosCategory = categories.find((c) => c.name === 'Outros')
+    const categoryId = parsed?.categoryId ?? outrosCategory?.id ?? null
+    const category = categories.find((c) => c.id === categoryId)
+    const card = cards.find((c) => c.id === parsed?.cardId)
+    const installmentValue =
+        parsed?.amount && parsed.installments && parsed.installments > 1 ? parsed.amount / parsed.installments : null
+
+    function handleConfirm() {
+        if (!parsed || parsed.ambiguous || parsed.amount === null) return
         if (createExpense.isPending) return
 
         createExpense.mutate(
@@ -46,7 +57,7 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
                 amount: parsed.amount,
                 description: parsed.merchantName ?? text,
                 merchantName: parsed.merchantName ?? undefined,
-                categoryId: parsed.categoryId,
+                categoryId,
                 cardId: parsed.cardId,
                 purchaseDate: toISODate(parsed.purchaseDate),
                 type: parsed.installments ? 'installment' : parsed.frequency ? 'recurring' : 'single',
@@ -57,10 +68,17 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
         )
     }
 
+    function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+        if (event.key !== 'Enter') return
+        handleConfirm()
+    }
+
+    const canConfirm = Boolean(parsed) && !parsed?.ambiguous && parsed?.amount !== null
+
     return (
         <div data-slot="quick-add" className="rounded-3xl border border-border bg-card p-4 shadow-sm">
             <Input
-                ref={inputRef}
+                ref={ref}
                 autoFocus={autoFocus}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -75,15 +93,62 @@ export function QuickAdd({ autoFocus }: QuickAddProps) {
                     {parsed.ambiguous || parsed.amount === null ? (
                         <span>Não consegui identificar o valor — confirme manualmente.</span>
                     ) : (
-                        <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                            {formatBRL(parsed.amount)}
-                            {parsed.installments ? ` em ${parsed.installments}x` : ''}
-                            {parsed.frequency ? ' (recorrente)' : ''}
-                            {parsed.merchantName ? ` — ${parsed.merchantName}` : ''}
-                        </span>
+                        <>
+                            <div className="flex items-baseline justify-between">
+                                <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                                    {formatBRL(parsed.amount)}
+                                </span>
+                                <span className="text-sm font-medium text-foreground">{parsed.merchantName ?? '—'}</span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                <span className="rounded-full bg-card px-2 py-1">
+                                    {category ? `${category.icon ?? ''} ${category.name}` : 'Sem categoria'}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2 py-1">
+                                    {card ? (
+                                        <CardVisual color={card.color} size="xs" />
+                                    ) : (
+                                        <span className="h-4 w-6 rounded-[4px] border border-dashed border-muted-foreground/50" />
+                                    )}
+                                    {card ? card.name : 'Sem cartão'}
+                                </span>
+                                {installmentValue !== null && (
+                                    <span className="rounded-full bg-card px-2 py-1">
+                                        🔢 {parsed.installments}x de {formatBRL(installmentValue)}
+                                    </span>
+                                )}
+                                {parsed.frequency && (
+                                    <span className="rounded-full bg-card px-2 py-1">🔁 Recorrente</span>
+                                )}
+                            </div>
+                        </>
                     )}
                 </div>
             )}
+            <div className="mt-3 flex gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 flex-1 rounded-2xl"
+                    onClick={() => setManualOpen(true)}
+                >
+                    Detalhar
+                </Button>
+                <Button
+                    type="button"
+                    className="h-12 flex-[2] rounded-2xl text-base"
+                    disabled={!canConfirm || createExpense.isPending}
+                    onClick={handleConfirm}
+                >
+                    {createExpense.isPending ? 'Salvando...' : 'Confirmar'}
+                </Button>
+            </div>
+            <ManualExpenseDialog
+                open={manualOpen}
+                onOpenChange={setManualOpen}
+                initial={parsed}
+                onSaved={() => setText('')}
+            />
         </div>
     )
 }
